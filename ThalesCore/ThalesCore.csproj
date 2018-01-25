@@ -1,0 +1,227 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{058207E9-904F-4CF6-976C-F285B7E97D2B}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>ThalesCore</RootNamespace>
+    <AssemblyName>ThalesCore</AssemblyName>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="ConsoleCommands\AConsoleCommand.cs" />
+    <Compile Include="ConsoleCommands\ConsoleCommandClass.cs" />
+    <Compile Include="ConsoleCommands\ConsoleCommandExplorer.cs" />
+    <Compile Include="ConsoleCommands\ConsoleMessage.cs" />
+    <Compile Include="ConsoleCommands\ConsoleMessageStack.cs" />
+    <Compile Include="ConsoleCommands\ExtendedValidator.cs" />
+    <Compile Include="ConsoleCommands\IConsoleDataValidator.cs" />
+    <Compile Include="ConsoleCommands\Implementations\FormZMKFromEncryptedComponents_D.cs" />
+    <Compile Include="ConsoleCommands\Implementations\ImportKey_IK.cs" />
+    <Compile Include="ConsoleCommands\Validators\AuthorizedStateValidator.cs" />
+    <Compile Include="ConsoleCommands\Implementations\CancelAuthorizedState_C.cs" />
+    <Compile Include="ConsoleCommands\Implementations\DoubleLengthDESCalculator_%24.cs" />
+    <Compile Include="ConsoleCommands\Implementations\EncryptClearComponent_EC.cs" />
+    <Compile Include="ConsoleCommands\Implementations\EnterAuthorizedState_A.cs" />
+    <Compile Include="ConsoleCommands\Implementations\ExportKey_KE.cs" />
+    <Compile Include="ConsoleCommands\Implementations\FormKeyFromComponents_FK.cs" />
+    <Compile Include="ConsoleCommands\Implementations\TripleLengthDESCalculator_T.cs" />
+    <Compile Include="ConsoleCommands\Validators\ComponentTypeValidator.cs" />
+    <Compile Include="ConsoleCommands\Validators\DataLengthValidator.cs" />
+    <Compile Include="ConsoleCommands\Validators\FlexibleHexKeyValidator.cs" />
+    <Compile Include="ConsoleCommands\Validators\KeyTypeValidator.cs" />
+    <Compile Include="ConsoleCommands\Implementations\SingleLengthDESCalculator_N.cs" />
+    <Compile Include="ConsoleCommands\ThalesConsoleCommandCode.cs" />
+    <Compile Include="ConsoleCommands\Validators\HexKeyValidator.cs" />
+    <Compile Include="ConsoleCommands\Validators\KeySchemeValidator.cs" />
+    <Compile Include="ConsoleCommands\Validators\NumberOfComponentsValidator.cs" />
+    <Compile Include="Cryptography\MAC\ISO9797Pad.cs" />
+    <Compile Include="Cryptography\MAC\ISO9797PaddingMethods.cs" />
+    <Compile Include="Cryptography\MAC\ISOX919Blocks.cs" />
+    <Compile Include="Cryptography\MAC\ISOX919MAC.cs" />
+    <Compile Include="ConsoleCommands\Validators\KeyLengthValidator.cs" />
+    <Compile Include="Exceptions\XFunctionNotPermitted.cs" />
+    <Compile Include="Exceptions\XInvalidAccount.cs" />
+    <Compile Include="Exceptions\XInvalidComponentType.cs" />
+    <Compile Include="Exceptions\XInvalidConfiguration.cs" />
+    <Compile Include="Exceptions\XInvalidKeyLength.cs" />
+    <Compile Include="Exceptions\XInvalidNumberOfComponents.cs" />
+    <Compile Include="Exceptions\XNeedsAuthorizedState.cs" />
+    <Compile Include="Exceptions\XUnsupportedPINBlockFormat.cs" />
+    <Compile Include="HostCommands\BuildIn\CancelAuthState_RA.cs" />
+    <Compile Include="HostCommands\BuildIn\GenerateKey_A0.cs" />
+    <Compile Include="HostCommands\Constants.cs" />
+    <Compile Include="KeyTypeTable.cs" />
+    <Compile Include="Cryptography\DES.cs" />
+    <Compile Include="Cryptography\HexKey.cs" />
+    <Compile Include="Cryptography\LMK\LMKStorage.cs" />
+    <Compile Include="Cryptography\LMK\Variants.cs" />
+    <Compile Include="Cryptography\TripleDES.cs" />
+    <Compile Include="ErrorCodes.cs" />
+    <Compile Include="Exceptions\XDecryptError.cs" />
+    <Compile Include="Exceptions\XEncryptError.cs" />
+    <Compile Include="Exceptions\XInvalidData.cs" />
+    <Compile Include="Exceptions\XInvalidKey.cs" />
+    <Compile Include="Exceptions\XInvalidKeyScheme.cs" />
+    <Compile Include="Exceptions\XInvalidKeyType.cs" />
+    <Compile Include="Exceptions\XInvalidStorageFile.cs" />
+    <Compile Include="HostCommands\AHostCommand.cs" />
+    <Compile Include="HostCommands\CommandClass.cs" />
+    <Compile Include="HostCommands\CommandExplorer.cs" />
+    <Compile Include="HostCommands\ThalesCommandCode.cs" />
+    <Compile Include="KeySchemeTable.cs" />
+    <Compile Include="LMKPairs.cs" />
+    <Compile Include="Log\ILogProcs.cs" />
+    <Compile Include="Log\Logger.cs" />
+    <Compile Include="Message\Message.cs" />
+    <Compile Include="Message\MessageParser.cs" />
+    <Compile Include="Message\MessageResponse.cs" />
+    <Compile Include="Message\XML\MessageField.cs" />
+    <Compile Include="Message\XML\MessageFields.cs" />
+    <Compile Include="Message\XML\MessageFieldsStore.cs" />
+    <Compile Include="Message\XML\MessageFieldTypes.cs" />
+    <Compile Include="Message\XML\MessageValues.cs" />
+    <Compile Include="PIN\PINBlockFormat.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Resources.cs" />
+    <Compile Include="TCP\TCPEventArgs.cs" />
+    <Compile Include="TCP\WorkerClient.cs" />
+    <Compile Include="ThalesError.cs" />
+    <Compile Include="ThalesMain.cs" />
+    <Compile Include="Utility.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="HostCommands\Runtime\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="ThalesParameters.xml" />
+    <Content Include="XMLDefs\HostCommands\CommandChaining_NK.xml" />
+    <Content Include="XMLDefs\HostCommands\DecryptEncryptedPIN_NG.xml" />
+    <Content Include="XMLDefs\HostCommands\DerivePINUsingTheIBMMethod_EE.xml" />
+    <Content Include="XMLDefs\HostCommands\EchoTest_B2.xml" />
+    <Content Include="XMLDefs\HostCommands\EncryptClearPIN_BA.xml" />
+    <Content Include="XMLDefs\HostCommands\ExportKey_A8.xml" />
+    <Content Include="XMLDefs\HostCommands\FormKeyFromEncryptedComponents_A4.xml" />
+    <Content Include="XMLDefs\HostCommands\FormZMKFromThreeComponents_GG.xml" />
+    <Content Include="XMLDefs\HostCommands\FormZMKFromTwoToNineComponents_GY.xml" />
+    <Content Include="XMLDefs\HostCommands\GeneraceMACMABUsingAnsiX919ForLargeMessage_MS.xml" />
+    <Content Include="XMLDefs\HostCommands\GenerateAndPrintComponent_A2.xml" />
+    <Content Include="XMLDefs\HostCommands\GenerateAndPrintSplitComponents_NE.xml" />
+    <Content Include="XMLDefs\HostCommands\GenerateAndPrintTMPTPKPVK_OE.xml" />
+    <Content Include="XMLDefs\HostCommands\GenerateAndPrintZMKComponent_OC.xml" />
+    <Content Include="XMLDefs\HostCommands\GenerateBDK_BI.xml" />
+    <Content Include="XMLDefs\HostCommands\GenerateCheckValue_BU.xml" />
+    <Content Include="XMLDefs\HostCommands\GenerateCheckValue_KA.xml" />
+    <Content Include="XMLDefs\HostCommands\GenerateCVKPair_AS.xml" />
+    <Content Include="XMLDefs\HostCommands\GenerateIBMOffset_DE.xml" />
+    <Content Include="XMLDefs\HostCommands\GenerateKey_A0.xml" />
+    <Content Include="XMLDefs\HostCommands\GenerateMACForLargeMessage_MQ.xml" />
+    <Content Include="XMLDefs\HostCommands\GenerateMAC_M6.xml" />
+    <Content Include="XMLDefs\HostCommands\GenerateMAC_MA.xml" />
+    <Content Include="XMLDefs\HostCommands\GeneratePVKPair_FG.xml" />
+    <Content Include="XMLDefs\HostCommands\GenerateRandomPIN_JA.xml" />
+    <Content Include="XMLDefs\HostCommands\GenerateTAK_HA.xml" />
+    <Content Include="XMLDefs\HostCommands\GenerateTMKTPKPVK_HC.xml" />
+    <Content Include="XMLDefs\HostCommands\GenerateVISACVV_CW.xml" />
+    <Content Include="XMLDefs\HostCommands\GenerateVISAPVV_DG.xml" />
+    <Content Include="XMLDefs\HostCommands\GenerateZEKorZAK_FI.xml" />
+    <Content Include="XMLDefs\HostCommands\GenerateZPK_IA.xml" />
+    <Content Include="XMLDefs\HostCommands\HashDataBlock_GM.xml" />
+    <Content Include="XMLDefs\HostCommands\HSMStatus_NO.xml" />
+    <Content Include="XMLDefs\HostCommands\ImportKey_A6.xml" />
+    <Content Include="XMLDefs\HostCommands\KeyScheme.xml" />
+    <Content Include="XMLDefs\HostCommands\LargeMultiFormatKey.xml" />
+    <Content Include="XMLDefs\HostCommands\MultiFormatCVK.xml" />
+    <Content Include="XMLDefs\HostCommands\MultiFormatKey.xml" />
+    <Content Include="XMLDefs\HostCommands\MultiFormatZMK.xml" />
+    <Content Include="XMLDefs\HostCommands\PINBlockFormat.xml" />
+    <Content Include="XMLDefs\HostCommands\RSAEncryptTo3DES_SA.xml" />
+    <Content Include="XMLDefs\HostCommands\SetHSMDelay_LG.xml" />
+    <Content Include="XMLDefs\HostCommands\SingleCommand.xml" />
+    <Content Include="XMLDefs\HostCommands\TranslateBDKFromLMKToZMK_DY.xml" />
+    <Content Include="XMLDefs\HostCommands\TranslateBDKFromZMKToLMK_DW.xml" />
+    <Content Include="XMLDefs\HostCommands\TranslateCVKFromLMKToZMK_AU.xml" />
+    <Content Include="XMLDefs\HostCommands\TranslateCVKFromZMKToLMK_AW.xml" />
+    <Content Include="XMLDefs\HostCommands\TranslateKeyScheme_B0.xml" />
+    <Content Include="XMLDefs\HostCommands\TranslateKeysFromOldLMKToNewLMK_BW.xml" />
+    <Content Include="XMLDefs\HostCommands\TranslatePINFromDUKPTToZPK3DES_G0.xml" />
+    <Content Include="XMLDefs\HostCommands\TranslatePINFromDUKPTToZPK_CI.xml" />
+    <Content Include="XMLDefs\HostCommands\TranslatePINFromLMKToZPK_JG.xml" />
+    <Content Include="XMLDefs\HostCommands\TranslatePINFromTPKToLMK_JC.xml" />
+    <Content Include="XMLDefs\HostCommands\TranslatePINFromTPKToZPK_CA.xml" />
+    <Content Include="XMLDefs\HostCommands\TranslatePINFromVISAToThales_BQ.xml" />
+    <Content Include="XMLDefs\HostCommands\TranslatePINFromZPKToLMK_JE.xml" />
+    <Content Include="XMLDefs\HostCommands\TranslatePINFromZPKToZPK_CC.xml" />
+    <Content Include="XMLDefs\HostCommands\TranslateTAKFromLMKToTMK_AG.xml" />
+    <Content Include="XMLDefs\HostCommands\TranslateTAKFromLMKToZMK_MG.xml" />
+    <Content Include="XMLDefs\HostCommands\TranslateTAKFromZMKToLMK_MI.xml" />
+    <Content Include="XMLDefs\HostCommands\TranslateTMKTPKPVKFromLMKToTMKTPKPVK_AE.xml" />
+    <Content Include="XMLDefs\HostCommands\TranslateTMKTPKPVKFromLMKToZMK_FE.xml" />
+    <Content Include="XMLDefs\HostCommands\TranslateTMPTPKPVKFromZMKToLMK_FC.xml" />
+    <Content Include="XMLDefs\HostCommands\TranslateZEKORZAKFromLMKToZMK_FM.xml" />
+    <Content Include="XMLDefs\HostCommands\TranslateZEKORZAKFromZMKToLMK_FK.xml" />
+    <Content Include="XMLDefs\HostCommands\TranslateZMKFromZMKToLMK_BY.xml" />
+    <Content Include="XMLDefs\HostCommands\TranslateZPKFromLMKToZMK_GC.xml" />
+    <Content Include="XMLDefs\HostCommands\TranslateZPKFromZMKToLMK_FA.xml" />
+    <Content Include="XMLDefs\HostCommands\VerifyAndGenerateVISAPVV_CU.xml" />
+    <Content Include="XMLDefs\HostCommands\VerifyAndTranslateMAC_ME.xml" />
+    <Content Include="XMLDefs\HostCommands\VerifyARQCAndOrGenerateARPC_KQ.xml" />
+    <Content Include="XMLDefs\HostCommands\VerifyDukptPINWithIBMAlgorithm_CK.xml" />
+    <Content Include="XMLDefs\HostCommands\VerifyDukptPINWithVISAAlgorithm_CM.xml" />
+    <Content Include="XMLDefs\HostCommands\VerifyDynamicCVV_PM.xml" />
+    <Content Include="XMLDefs\HostCommands\VerifyInterchangePinUsingComparisonMethod_BE.xml" />
+    <Content Include="XMLDefs\HostCommands\VerifyInterchangePINWithIBMAlgorithm_EA.xml" />
+    <Content Include="XMLDefs\HostCommands\VerifyInterchangePINWithVISAAlgorithm_EC.xml" />
+    <Content Include="XMLDefs\HostCommands\VerifyMAC_M8.xml" />
+    <Content Include="XMLDefs\HostCommands\VerifyMAC_MC.xml" />
+    <Content Include="XMLDefs\HostCommands\VerifyTerminalPinUsingComparisonMethod_BC.xml" />
+    <Content Include="XMLDefs\HostCommands\VerifyTerminalPINwithIBMAlgorithm_DA.xml" />
+    <Content Include="XMLDefs\HostCommands\VerifyTerminalPINWithVISAAlgorithm_DC.xml" />
+    <Content Include="XMLDefs\HostCommands\VerifyTruncatedApplicationCryptogram_K2.xml" />
+    <Content Include="XMLDefs\HostCommands\VerifyVISACVV_CY.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="XMLDefs\HostCommands\HostCommandDefinitions.xsd">
+      <SubType>Designer</SubType>
+    </None>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

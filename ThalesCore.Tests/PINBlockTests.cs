@@ -13,7 +13,6 @@ namespace ThalesCore.Tests
         [TestMethod]
         public void TestANSIX98Creation()
         {
-            string s = PINBlockFormat.ToPINBlock("4324", "00000000819420823", PINBlockFormat.PIN_Block_Format.AnsiX98);
             Assert.AreEqual(PINBlockFormat.ToPINBlock("1234", "550000025321", PINBlockFormat.PIN_Block_Format.AnsiX98), "041261FFFFFDACDE");
         }
 

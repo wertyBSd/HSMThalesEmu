@@ -53,7 +53,7 @@ namespace Message.XML
 
                     if (ContainsNonNullColumn(dr, "ExclusiveDependency")) fld.ExclusiveDependency = Convert.ToBoolean(dr["ExclusiveDependency"]);
 
-                    if (ContainsNonNullColumn(dr, "RejectionCodeIfInvalid")) fld.RejectionCode = Convert.ToString(dr["DynamicFieldLength"]);
+                    if (ContainsNonNullColumn(dr, "RejectionCodeIfInvalid")) fld.RejectionCode = Convert.ToString(dr["RejectionCodeIfInvalid"]);
 
                     if (ContainsNonNullColumn(dr, "Repetitions")) fld.Repetitions = Convert.ToString(dr["Repetitions"]);
 

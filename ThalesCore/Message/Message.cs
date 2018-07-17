@@ -28,6 +28,7 @@ namespace ThalesCore.Message
         public Message(string data)
         {
             _bData = Utility.GetBytesFromString(data);
+            _data = data;
         }
 
         public Message(byte[] data)

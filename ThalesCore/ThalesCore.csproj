@@ -81,6 +81,7 @@
     <Compile Include="Exceptions\XUnsupportedPINBlockFormat.cs" />
     <Compile Include="HostCommands\BuildIn\CancelAuthState_RA.cs" />
     <Compile Include="HostCommands\BuildIn\GenerateKey_A0.cs" />
+    <Compile Include="HostCommands\BuildIn\GenerateZPK_IA.cs" />
     <Compile Include="HostCommands\Constants.cs" />
     <Compile Include="KeyTypeTable.cs" />
     <Compile Include="Cryptography\DES.cs" />
@@ -105,12 +106,12 @@
     <Compile Include="Log\ILogProcs.cs" />
     <Compile Include="Log\Logger.cs" />
     <Compile Include="Message\Message.cs" />
-    <Compile Include="Message\MessageParser.cs" />
     <Compile Include="Message\MessageResponse.cs" />
     <Compile Include="Message\XML\MessageField.cs" />
     <Compile Include="Message\XML\MessageFields.cs" />
     <Compile Include="Message\XML\MessageFieldsStore.cs" />
     <Compile Include="Message\XML\MessageFieldTypes.cs" />
+    <Compile Include="Message\XML\MessageParser.cs" />
     <Compile Include="Message\XML\MessageValues.cs" />
     <Compile Include="PIN\PINBlockFormat.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

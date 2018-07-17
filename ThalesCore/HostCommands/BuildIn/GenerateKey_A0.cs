@@ -5,8 +5,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using ThalesCore.Cryptography;
-using ThalesCore.Message;
+using ThalesCore.Message.XML;
 using ThalesCore.HostCommands;
+using ThalesCore.Message;
 
 namespace ThalesCore.HostCommands.BuildIn
 {
@@ -26,8 +27,8 @@ namespace ThalesCore.HostCommands.BuildIn
 
         public override void AcceptMessage(Message.Message msg)
         {
-            string ret = "";
-            MessageParser.Parse(msg, XMLMessageFields, ref kvp, out ret);
+            string ret = "00";
+            ThalesCore.Message.XML.MessageParser.Parse(msg, XMLMessageFields, ref kvp, out ret);
             if (XMLParseResult == ErrorCodes.ER_00_NO_ERROR)
             {
                 _modeFlag = kvp.Item("Mode");

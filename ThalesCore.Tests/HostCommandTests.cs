@@ -74,6 +74,7 @@ namespace ThalesCore.Tests
             AuthorizedStateOn();
             SwitchToDoubleLengthZMKs();
             string ZMK = TestTran("0000U", new GenerateKey_A0()).Substring(2, 33);
+            Assert.AreEqual("00", TestTran(ZMK, new GenerateZPK_IA()).Substring(0, 2));
         }
 
         private void SwitchToDoubleLengthZMKs()

@@ -77,7 +77,24 @@ namespace ThalesCore.Tests
             Assert.AreEqual("00", TestTran(ZMK, new GenerateZPK_IA()).Substring(0, 2));
         }
 
-        private void SwitchToDoubleLengthZMKs()
+		[TestMethod]
+		public void TestCancelAuthState()
+		{
+			Assert.AreEqual(TestTran("", new CancelAuthState_RA()), "00");
+		}
+
+		[TestMethod]
+		public void TestSetHSMDelay()
+		{
+			Assert.AreEqual("00", TestTran("001", new SetHSMDelay_LG()));
+		}
+		[TestMethod]
+		public void TestHSMStatus()
+		{
+
+			Assert.AreEqual("00", TestTran("00", new HSMStatus_NO()).Substring(0, 2));
+		}
+		private void SwitchToDoubleLengthZMKs()
         {
             Resources.UpdateResource(Resources.DOUBLE_LENGTH_ZMKS, true);
             ClearMessageFieldStoreStore();

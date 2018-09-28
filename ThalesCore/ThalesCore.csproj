@@ -82,6 +82,8 @@
     <Compile Include="HostCommands\BuildIn\CancelAuthState_RA.cs" />
     <Compile Include="HostCommands\BuildIn\GenerateKey_A0.cs" />
     <Compile Include="HostCommands\BuildIn\GenerateZPK_IA.cs" />
+    <Compile Include="HostCommands\BuildIn\HSMStatus_NO.cs" />
+    <Compile Include="HostCommands\BuildIn\SetHSMDelay_LG.cs" />
     <Compile Include="HostCommands\Constants.cs" />
     <Compile Include="KeyTypeTable.cs" />
     <Compile Include="Cryptography\DES.cs" />

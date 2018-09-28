@@ -27,8 +27,8 @@ namespace ThalesCore.HostCommands.BuildIn
 
         public override void AcceptMessage(Message.Message msg)
         {
-            string ret = "00";
-            ThalesCore.Message.XML.MessageParser.Parse(msg, XMLMessageFields, ref kvp, out ret);
+            string ret = string.Empty;
+			ThalesCore.Message.XML.MessageParser.Parse(msg, XMLMessageFields, ref kvp, out ret);
             if (XMLParseResult == ErrorCodes.ER_00_NO_ERROR)
             {
                 _modeFlag = kvp.Item("Mode");

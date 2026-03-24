@@ -33,7 +33,5 @@ namespace ThalesCore.Tests
         {
             Assert.AreEqual(PINBlockFormat.ToPIN("1234FFFFFFFFFFFF", "550000025321", PINBlockFormat.PIN_Block_Format.Diebold), "1234");
         }
-
-
     }
 }

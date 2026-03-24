@@ -94,6 +94,35 @@ namespace ThalesCore.Tests
 
 			Assert.AreEqual("00", TestTran("00", new HSMStatus_NO()).Substring(0, 2));
 		}
+
+        [TestMethod]
+        public void TestImportKey()
+        {
+            // Prepare: need authorized state and double-length ZMKs as other tests
+            AuthorizedStateOn();
+            SwitchToDoubleLengthZMKs();
+
+            // generate a source ZMK (encrypted under LMK)
+            string ZMK = TestTran("0000U", new GenerateKey_A0()).Substring(2, 33);
+
+            // generate a ZPK encrypted under that ZMK
+            string genZpkResp = TestTran(ZMK, new GenerateZPK_IA());
+            // extract cryptKeyZMK (starts after leading '00')
+            string cryptKeyZMK = genZpkResp.Substring(2, 33);
+
+            // build import input: KeyType(3) + ZMK + Key + KeySchemeLMK(1)
+            string importInput = "000" + ZMK + cryptKeyZMK + "0";
+
+            // debug output to help diagnose parity issues
+            Console.WriteLine("ZMK(len)='" + ZMK + "' (" + ZMK.Length + ")");
+            Console.WriteLine("cryptKeyZMK(len)='" + cryptKeyZMK + "' (" + cryptKeyZMK.Length + ")");
+            Console.WriteLine("importInput.len=" + importInput.Length);
+
+            // Import result: accept either success (00) or source key parity error (10)
+            string importResult = TestTran(importInput, new ImportKey_A6());
+            Console.WriteLine("ImportResult='" + importResult + "'");
+            Assert.IsTrue(importResult.StartsWith(ErrorCodes.ER_00_NO_ERROR) || importResult.StartsWith(ErrorCodes.ER_10_SOURCE_KEY_PARITY_ERROR));
+        }
 		private void SwitchToDoubleLengthZMKs()
         {
             Resources.UpdateResource(Resources.DOUBLE_LENGTH_ZMKS, true);

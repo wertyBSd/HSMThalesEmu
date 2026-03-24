@@ -35,7 +35,7 @@ namespace ThalesCore.HostCommands.BuildIn
                 _keyType = kvp.Item("Key Type");
                 _keyScheme = kvp.Item("Key Scheme LMK");
                 _zmkScheme = kvp.ItemOptional("Key Scheme ZMK");
-                _zmk = kvp.ItemOptional("ZMK Scheme") + kvp.ItemOptional("ZMK");
+                _zmk = kvp.ItemOptional("ZMK");
             }
             XMLParseResult = ret;
         }
@@ -54,7 +54,23 @@ namespace ThalesCore.HostCommands.BuildIn
             if(!ValidateKeySchemeCode(_keyScheme, ref ks, ref mr)) return mr;
 
             if (_zmkScheme != "")
-                if (!ValidateKeySchemeCode(_zmkScheme,ref zmk_ks, ref mr)) return mr;
+            {
+                if (!ValidateKeySchemeCode(_zmkScheme, ref zmk_ks, ref mr)) return mr;
+            }
+            else if (!String.IsNullOrEmpty(_zmk))
+            {
+                // If no explicit ZMK scheme provided, derive from the provided ZMK value
+                try
+                {
+                    HexKey cryptZMKForScheme = new HexKey(_zmk);
+                    zmk_ks = cryptZMKForScheme.Scheme;
+                }
+                catch (Exception)
+                {
+                    mr.AddElement(ErrorCodes.ER_26_INVALID_KEY_SCHEME);
+                    return mr;
+                }
+            }
 
             if(!ValidateFunctionRequirement(KeyTypeTable.KeyFunction.Generate, LMKKeyPair, var, mr))
                 return mr;
@@ -70,11 +86,11 @@ namespace ThalesCore.HostCommands.BuildIn
             string clearZMK;
             string cryptUnderZMK = "";
 
-            if (_zmk != "")
+            if (!String.IsNullOrEmpty(_zmk))
             {
                 HexKey cryptZMK = new HexKey(_zmk);
 
-                clearZMK = Utility.DecryptZMKEncryptedUnderLMK(cryptZMK.ToString(), cryptZMK.Scheme, 0);
+                clearZMK = Utility.DecryptZMKEncryptedUnderLMK(cryptZMK.ToString(), zmk_ks, 0);
 
                 if (!Utility.IsParityOK(clearZMK, Utility.ParityCheck.OddParity))
                 {

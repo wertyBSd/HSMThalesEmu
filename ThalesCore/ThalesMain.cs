@@ -193,7 +193,7 @@ namespace ThalesCore
             {
                 Logger.MajorError("Error loading the configuration file");
                 Logger.MajorError(ex.ToString());
-                return true;
+                return false;
             }
         }
 
@@ -257,7 +257,7 @@ namespace ThalesCore
             VBsources = Utility.GetExecutingDirectory();
             Logger.CurrentLogLevel = Logger.LogLevel.Debug;
             CheckLMKParity = true;
-            HostDefsDir = Utility.GetExecutingDirectory();
+            HostDefsDir = Utility.AppendDirectorySeparator(Utility.GetExecutingDirectory()) + "XMLDefs\\HostCommands";
             DoubleLengthZMKs = false;
             LegacyMode = false;
             ExpectTrailers = false;
@@ -716,14 +716,14 @@ namespace ThalesCore
 
         public void GetMajor(string s) 
         {
-            MajorLogEvent(this, s);
+            MajorLogEvent?.Invoke(this, s);
         }
 
 
 
         public void GetMinor(string s)
         {
-            MinorLogEvent(this, s);
+            MinorLogEvent?.Invoke(this, s);
         }
     }
 }

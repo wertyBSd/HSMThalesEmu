@@ -100,35 +100,57 @@ namespace ThalesCore.Message.XML
 
                         if (fld.SkipUntilValid)
                         {
-                            try
-                            {
-                                do
-                                {
-                                    val = msg.MessageData.Substring(msg.CurrentIndex, fld.Length);
-                                    if (fld.ValidValues.Contains(val))
-                                    {
-                                        break;
-                                    }
-                                    else
-                                    {
-                                        msg.AdvanceIndex(1);
-                                    }
-                                }
-                                while (fld.ValidValues.Contains(val));
-                            }
-                            catch (ArgumentOutOfRangeException ex)
+                            // Safely attempt to read a fixed-length substring until a valid value is found.
+                            if (fld.Length <= 0)
                             {
                                 if (fld.AllowNotFoundValid)
                                     val = "";
                                 else
-                                    throw ex;
+                                {
+                                    result = (fld.RejectionCode != "") ? fld.RejectionCode : ErrorCodes.ER_80_DATA_LENGTH_ERROR;
+                                    return;
+                                }
+                            }
+
+                            while (true)
+                            {
+                                if (msg.CharsLeft() < fld.Length)
+                                {
+                                    if (fld.AllowNotFoundValid)
+                                    {
+                                        val = "";
+                                        break;
+                                    }
+                                    else
+                                    {
+                                        result = (fld.RejectionCode != "") ? fld.RejectionCode : ErrorCodes.ER_80_DATA_LENGTH_ERROR;
+                                        return;
+                                    }
+                                }
+
+                                val = msg.MessageData.Substring(msg.CurrentIndex, fld.Length);
+                                if (fld.ValidValues.Contains(val))
+                                {
+                                    break;
+                                }
+                                else
+                                {
+                                    msg.AdvanceIndex(1);
+                                }
                             }
                         }
                         else if (fld.ParseUntilValue != "")
                         {
                             string tempVal = "";
-                            do
+                            while (true)
                             {
+                                if (msg.CharsLeft() < 1)
+                                {
+                                    // unexpected end of message while parsing until value
+                                    result = (fld.RejectionCode != "") ? fld.RejectionCode : ErrorCodes.ER_80_DATA_LENGTH_ERROR;
+                                    return;
+                                }
+
                                 val = msg.MessageData.Substring(msg.CurrentIndex, 1);
                                 if (fld.ParseUntilValue == val)
                                 {
@@ -141,7 +163,6 @@ namespace ThalesCore.Message.XML
                                     msg.AdvanceIndex(1);
                                 }
                             }
-                            while (true);
                             val = tempVal;
                         }
                         else
@@ -165,6 +186,13 @@ namespace ThalesCore.Message.XML
                             }
                             if (fld.Length != 0)
                             {
+                                int needed = (fld.MessageFieldType != MessageFieldTypes.Binary) ? fld.Length : fld.Length * 2;
+                                if (msg.CharsLeft() < needed)
+                                {
+                                    result = (fld.RejectionCode != "") ? fld.RejectionCode : ErrorCodes.ER_80_DATA_LENGTH_ERROR;
+                                    return;
+                                }
+
                                 if ((fld.MessageFieldType != MessageFieldTypes.Binary))
                                 {
                                     val = msg.MessageData.Substring(msg.CurrentIndex, fld.Length);

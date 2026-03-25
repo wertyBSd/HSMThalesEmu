@@ -1,17 +1,17 @@
 ﻿using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NUnit.Framework;
 using HostCommands;
 using ThalesCore.Message;
 using ThalesCore.HostCommands.BuildIn;
 
 namespace ThalesCore.Tests
 {
-    [TestClass]
+    [TestFixture]
     public class HostCommandTests
     {
         private ThalesMain o;
 
-        [TestInitialize]
+        [SetUp]
         public void InitTests()
         {
             o = new ThalesMain();
@@ -30,7 +30,7 @@ namespace ThalesCore.Tests
             
         }
 
-        [TestCleanup]
+        [TearDown]
         public void EndTests()
         {
             o.ShutDown();
@@ -68,7 +68,7 @@ namespace ThalesCore.Tests
             return (bool)Resources.GetResource(Resources.EXPECT_TRAILERS);
         }
 
-        [TestMethod]
+        [Test]
         public void TestGenerateZPK()
         {
             AuthorizedStateOn();
@@ -77,25 +77,25 @@ namespace ThalesCore.Tests
             Assert.AreEqual("00", TestTran(ZMK, new GenerateZPK_IA()).Substring(0, 2));
         }
 
-		[TestMethod]
-		public void TestCancelAuthState()
+        [Test]
+        public void TestCancelAuthState()
 		{
 			Assert.AreEqual(TestTran("", new CancelAuthState_RA()), "00");
 		}
 
-		[TestMethod]
-		public void TestSetHSMDelay()
+        [Test]
+        public void TestSetHSMDelay()
 		{
 			Assert.AreEqual("00", TestTran("001", new SetHSMDelay_LG()));
 		}
-		[TestMethod]
-		public void TestHSMStatus()
+        [Test]
+        public void TestHSMStatus()
 		{
 
 			Assert.AreEqual("00", TestTran("00", new HSMStatus_NO()).Substring(0, 2));
 		}
 
-        [TestMethod]
+        [Test]
         public void TestImportKey()
         {
             // Prepare: need authorized state and double-length ZMKs as other tests

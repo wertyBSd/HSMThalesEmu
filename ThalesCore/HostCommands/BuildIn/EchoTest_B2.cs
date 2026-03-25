@@ -25,7 +25,14 @@ namespace ThalesCore.HostCommands.BuildIn
         public override MessageResponse ConstructResponse()
         {
             MessageResponse mr = new MessageResponse();
-            mr.AddElement(ErrorCodes.ER_00_NO_ERROR);
+            if (!String.IsNullOrEmpty(XMLParseResult) && XMLParseResult != ErrorCodes.ER_00_NO_ERROR)
+            {
+                mr.AddElement(XMLParseResult);
+            }
+            else
+            {
+                mr.AddElement(ErrorCodes.ER_00_NO_ERROR);
+            }
             return mr;
         }
     }

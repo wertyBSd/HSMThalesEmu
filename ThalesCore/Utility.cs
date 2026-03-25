@@ -516,7 +516,7 @@ namespace ThalesCore
 
         public static string GetStringFromBytes(byte[] b)
         {
-            return System.Text.ASCIIEncoding.GetEncoding(System.Globalization.CultureInfo.CurrentCulture.TextInfo.ANSICodePage).GetChars(b).ToString();
+            return System.Text.Encoding.ASCII.GetString(b);
         }
 
         public static string TransformUsingAtallaVariant(string key, string AtallaVariant)

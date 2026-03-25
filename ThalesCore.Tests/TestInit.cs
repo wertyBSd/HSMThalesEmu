@@ -2,15 +2,15 @@ using System;
 using System.IO;
 using System.Reflection;
 using System.Text;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NUnit.Framework;
 
 namespace ThalesCore.Tests
 {
-    [TestClass]
-    public static class TestInit
+    [SetUpFixture]
+    public class TestInit
     {
-        [AssemblyInitialize]
-        public static void AssemblyInit(TestContext context)
+        [OneTimeSetUp]
+        public void AssemblyInit()
         {
             // Enable codepage encodings (e.g., 1252) used by the original code
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);

@@ -1,34 +1,33 @@
 ﻿using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NUnit.Framework;
 
 using ThalesCore.PIN;
 
 namespace ThalesCore.Tests
 {
-    [TestClass]
+    [TestFixture]
     public class PINBlockTests
     {
-        private TestContext testContextInstance;
 
-        [TestMethod]
+        [Test]
         public void TestANSIX98Creation()
         {
             Assert.AreEqual(PINBlockFormat.ToPINBlock("1234", "550000025321", PINBlockFormat.PIN_Block_Format.AnsiX98), "041261FFFFFDACDE");
         }
 
-        [TestMethod]
+        [Test]
         public void TestDieboldCreation()
         {
             Assert.AreEqual(PINBlockFormat.ToPINBlock("1234", "550000025321", PINBlockFormat.PIN_Block_Format.Diebold), "1234FFFFFFFFFFFF");
         }
 
-        [TestMethod]
+        [Test]
         public void TestANSIX98Decomposition()
         {
             Assert.AreEqual(PINBlockFormat.ToPIN("041261FFFFFDACDE", "550000025321", PINBlockFormat.PIN_Block_Format.AnsiX98), "1234");
         }
 
-        [TestMethod]
+        [Test]
         public void TestDieboldDecomposition()
         {
             Assert.AreEqual(PINBlockFormat.ToPIN("1234FFFFFFFFFFFF", "550000025321", PINBlockFormat.PIN_Block_Format.Diebold), "1234");

@@ -1,5 +1,5 @@
 ﻿using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NUnit.Framework;
 using ThalesCore;
 using ThalesCore.ConsoleCommands;
 using ThalesCore.ConsoleCommands.Implementations;
@@ -8,7 +8,7 @@ using ThalesCore.ConsoleCommands.Validators;
 
 namespace ThalesCore.Tests
 {
-    [TestClass]
+    [TestFixture]
     public class ConsoleCommandTests
     {
         private ThalesMain o;
@@ -16,7 +16,7 @@ namespace ThalesCore.Tests
         private const string ZEROES = "0000000000000000";
 
 
-        [TestInitialize]
+        [SetUp]
         public void InitTests()
         {
             o = new ThalesMain();
@@ -33,7 +33,7 @@ namespace ThalesCore.Tests
         {
         }
 
-        [TestCleanup]
+        [TearDown]
         public void EndTests()
         {
             o.ShutDown();
@@ -67,7 +67,7 @@ namespace ThalesCore.Tests
         }
 
 
-        [TestMethod]
+        [Test]
         public void TestEnterAuthorizedState()
         {
             TestCommand(new string[] { }, new EnterAuthorizedState_A());
@@ -75,7 +75,7 @@ namespace ThalesCore.Tests
 
         }
 
-        [TestMethod]
+        [Test]
         public void TestExitAuthorizedState()
         {
             TestCommand(new string[] { }, new CancelAuthorizedState_C());
@@ -83,7 +83,7 @@ namespace ThalesCore.Tests
 
         }
 
-        [TestMethod]
+        [Test]
         public void TestDoubleLengthDesCalculator()
         {
             HexKey k = GetRandomKey(HexKey.KeyLength.DoubleLength);
@@ -91,7 +91,7 @@ namespace ThalesCore.Tests
                         TestCommand(new string[] { k.ToString(), ZEROES }, new DoubleLengthDESCalculator_Dollar()));
         }
 
-        [TestMethod]
+        [Test]
         public void TestSingleLengthDesCalculator()
         {
             HexKey k = GetRandomKey(HexKey.KeyLength.SingleLength);
@@ -99,7 +99,7 @@ namespace ThalesCore.Tests
                         TestCommand(new string[] { k.ToString(), ZEROES }, new SingleLengthDESCalculator_N()));
         }
 
-        [TestMethod]
+        [Test]
         public void TestTripleLengthDesCalculator()
         {
             HexKey k = GetRandomKey(HexKey.KeyLength.TripleLength);
@@ -107,7 +107,7 @@ namespace ThalesCore.Tests
                         TestCommand(new string[] { k.ToString(), "S",ZEROES }, new TripleLengthDESCalculator_T()));
         }
 
-        [TestMethod]
+        [Test]
         public void TestEncryptClearComponent()
         {
             AuthorizedStateOn();
@@ -124,7 +124,7 @@ namespace ThalesCore.Tests
                             TestCommand(new string[] { "008", "Y", k.ToString() }, new EncryptClearComponent_EC()));
         }
 
-        [TestMethod]
+        [Test]
         public void TestExportKey()
         {
             HexKey k = null;
@@ -140,7 +140,7 @@ namespace ThalesCore.Tests
                         TestCommand(new string[] { "001", "U", cryptZMK, cryptKey }, new ExportKey_KE()));
         }
 
-        [TestMethod]
+        [Test]
         public void TestFormKeyFromComponents()
         {
             AuthorizedStateOn();
@@ -154,7 +154,7 @@ namespace ThalesCore.Tests
                             TestCommand(new string[] { "2", "000", "U", "X", "3", cmp1.ToString(), cmp2.ToString(), cmp3.ToString() }, new FormKeyFromComponents_FK()));
         }
 
-        [TestMethod]
+        [Test]
         public void TestZMKFromEncryptedComponents()
         {
             AuthorizedStateOn();
@@ -171,7 +171,7 @@ namespace ThalesCore.Tests
                                                        Utility.RemoveKeyType(Utility.EncryptUnderLMK(cmp3.ToString(), KeySchemeTable.KeyScheme.DoubleLengthKeyAnsi, LMKPairs.LMKPair.Pair04_05, "0"))}, new FormZMKFromEncryptedComponents_D()));
         }
 
-        [TestMethod]
+        [Test]
         public void TestImportKey()
         {
             AuthorizedStateOn();

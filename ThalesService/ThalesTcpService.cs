@@ -19,16 +19,19 @@ namespace ThalesService
     {
         private readonly ILogger<ThalesTcpService> _logger;
         private TcpListener _listener;
-        private const int Port = 1500;
+        private readonly int _port;
 
         public ThalesTcpService(ILogger<ThalesTcpService> logger)
         {
             _logger = logger;
+            var env = Environment.GetEnvironmentVariable("THALES_SERVICE_PORT");
+            if (!int.TryParse(env, out _port))
+                _port = 1500;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("ThalesTcpService starting, listening on port {port}", Port);
+            _logger.LogInformation("ThalesTcpService starting, listening on port {port}", _port);
 
             // initialize Thales environment
             var thales = new ThalesCore.ThalesMain();
@@ -40,7 +43,7 @@ namespace ThalesService
             try { thales.StartUpWithoutTCP(paramFile); }
             catch { _logger.LogWarning("Could not load Thales parameters from {file}", paramFile); }
 
-            _listener = new TcpListener(IPAddress.Loopback, Port);
+            _listener = new TcpListener(IPAddress.Loopback, _port);
             _listener.Start();
 
             var explorer = new HostCommands.CommandExplorer();

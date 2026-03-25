@@ -1,18 +1,18 @@
 ﻿using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NUnit.Framework;
 using ThalesCore.Cryptography;
 using ThalesCore.Cryptography.MAC;
 
 namespace ThalesCore.Tests
 {
-    [TestClass]
+    [TestFixture]
     public class EncryptionTests
     {
         private const string ZEROES = "0000000000000000";
 
 
 
-        [TestMethod]
+        [Test]
         public void TestSimpleDES()
         {
             string sResult = DES.DESEncrypt("0123456789ABCDEF", ZEROES);
@@ -22,7 +22,7 @@ namespace ThalesCore.Tests
 
         }
 
-        [TestMethod]
+        [Test]
         public void TestTripleDES()
         {
             string sResult = TripleDES.TripleDESEncrypt(new HexKey("0123456789ABCDEFABCDEF0123456789"), ZEROES);
@@ -31,7 +31,7 @@ namespace ThalesCore.Tests
             Assert.AreEqual(sResult2, ZEROES);
         }
 
-        [TestMethod]
+        [Test]
         public void TestDoubleVariant()
         {
             Cryptography.LMK.LMKStorage.LMKStorageFile = "LMKSTORAGE.TXT";
@@ -40,7 +40,7 @@ namespace ThalesCore.Tests
             Assert.AreEqual(sResult, "5178C9D3D1052B15BF6AEC458B4A4564");
         }
 
-        [TestMethod]
+        [Test]
         public void TestX919Mac()
         {
             HexKey hk = new HexKey("838652DF68A246046DAB6104583B201A");

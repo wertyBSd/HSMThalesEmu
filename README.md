@@ -1,25 +1,29 @@
-# HSMThalesEmu
-Thales HSM emulator — локальная реализация серверной логики и набор хостов/клиентов для разработки и интеграционного тестирования.
+ # HSMThalesEmu
 
-**Содержание репозитория**
-- **ThalesCore/**: основная библиотека с реализацией команд, парсером сообщений и криптографией.
-- **ThalesService/**: библиотека, реализующая BackgroundService (TCP-сервер) — сервисная логика вынесена в библиотеку.
-- **ThalesService.Hosts.Console/**: консольный хост, запускающий `ThalesTcpService` в `IHost` для локального запуска.
-- **ThalesService.Hosts.WindowsService/**: Windows Service хост (использует `UseWindowsService`).
-- **ThalesService.Hosts.UI/**: WinForms хост для интерактивного запуска сервиса с минимальным UI.
-- **ThalesService.IntegrationTests/**: интеграционные тесты (NUnit). Тесты запускают хост в процессе и используют эпемерные порты.
-- **ThalesCore.Tests/**: unit-тесты для `ThalesCore` (NUnit).
-- **ThalesClients/ConsoleClient/**: простой консольный TCP-клиент (не включён в .sln по требованию).
-- **ThalesClients/UIClient/**: простой WinForms клиент с чекбоксами/списками (не включён в .sln).
+Thales HSM emulator — local implementation of server logic and a set of hosts/clients for development and integration testing.
 
-**Ключевые концепции**
-- Сервис читает порт из переменной окружения `THALES_SERVICE_PORT`. Для интеграционных тестов используется свободный (ephemeral) порт, который прописывается в окружение теста.
-- Интеграционные тесты создают `Host.CreateDefaultBuilder()` и регистрируют `AddHostedService<ThalesTcpService>()`, чтобы запустить сервис в процессе теста и избежать проблем с межпроцессными гонками.
-- Парсер сообщений укреплён — теперь возвращает код отказа (например, `80`) при недостающих данных вместо выброса исключения.
+## Repository layout
 
-**Сборка**
-1. Установите .NET SDK 8.x (рекомендуется последнее стабильное).
-2. В корне репозитория выполните:
+- `ThalesCore/` — core library with command implementations, message parser, and cryptography.
+- `ThalesService/` — service library implementing the `ThalesTcpService` BackgroundService (TCP server).
+- `ThalesService.Hosts.Console/` — console host that runs `ThalesTcpService` inside an `IHost` for local runs.
+- `ThalesService.Hosts.WindowsService/` — Windows Service host (uses `UseWindowsService`).
+- `ThalesService.Hosts.UI/` — WinForms host to run the service interactively.
+- `ThalesService.IntegrationTests/` — integration tests (NUnit). Tests start the host in-process and use ephemeral ports.
+- `ThalesCore.Tests/` — unit tests for `ThalesCore` (NUnit).
+- `ThalesClients/ConsoleClient/` — simple console TCP client (not included in the solution by design).
+- `ThalesClients/UIClient/` — simple WinForms client with checkboxes/lists (not included in the solution by design).
+
+## Key concepts
+
+- The service reads the listening port from the `THALES_SERVICE_PORT` environment variable. Integration tests use an ephemeral port and set this environment variable for the test host.
+- Integration tests run the service in-process with `Host.CreateDefaultBuilder()` and `AddHostedService<ThalesTcpService>()` to avoid inter-process race conditions.
+- The message parser has been hardened — it now returns a rejection code (for example, `80`) for insufficient or malformed input instead of throwing an exception.
+
+## Build
+
+1. Install .NET SDK 8.x (latest stable recommended).
+2. From the repository root you can build specific projects:
 
 ```bash
 dotnet build ThalesCore/ThalesCore.csproj -c Debug
@@ -27,79 +31,83 @@ dotnet build ThalesService/ThalesService.csproj -c Debug
 dotnet build ThalesService.IntegrationTests/ThalesService.IntegrationTests.csproj -c Debug
 ```
 
-Или собрать всё решение:
+Or build the whole solution:
 
 ```bash
 dotnet build ThalesEmu.sln -c Debug
 ```
 
-**Запуск хостов**
-- Консольный хост (локальный запуск сервиса):
+## Running hosts
+
+- Console host (run the service locally):
 
 ```bash
 cd ThalesService.Hosts.Console/bin/Debug/net8.0
 dotnet ThalesService.Hosts.Console.dll
 ```
 
-- Windows Service хост: соберите `ThalesService.Hosts.WindowsService` и установите как сервис (например `sc create ...`), либо используйте `sc`/PowerShell для установки.
+- Windows Service host: build `ThalesService.Hosts.WindowsService` and install it as a Windows service (for example use `sc create ...` or PowerShell service management).
 
-- UI хост (WinForms):
+- UI host (WinForms):
 
 ```bash
 cd ThalesService.Hosts.UI/bin/Debug/net8.0-windows
 dotnet ThalesService.Hosts.UI.dll
 ```
 
-По умолчанию сервис слушает порт `1500`, но для тестов и локального запуска можно указать другой порт через переменную окружения `THALES_SERVICE_PORT`.
+By default the service listens on port `1500`. For tests or alternative local runs set the `THALES_SERVICE_PORT` environment variable to a different port.
 
-**Клиенты (не в решении)**
-- `ThalesClients/ConsoleClient` — интерактивный консольный клиент. Запуск:
+## Clients (not in the solution)
+
+- `ThalesClients/ConsoleClient` — interactive console TCP client. Run:
 
 ```bash
 dotnet run --project ThalesClients/ConsoleClient/ThalesConsoleClient.csproj -- 127.0.0.1 1500
 ```
 
-- `ThalesClients/UIClient` — простой WinForms UI-клиент. Запуск:
+- `ThalesClients/UIClient` — simple WinForms UI client. Run:
 
 ```bash
 dotnet run --project ThalesClients/UIClient/ThalesUIClient.csproj
 ```
 
-Эти проекты сознательно не добавлены в `.sln` — они служат как примеры-клиенты для разработки.
+These client projects are intentionally not added to the `.sln` and serve as development examples.
 
-**Тесты**
-- Запустить интеграционные тесты:
+## Tests
+
+- Run integration tests:
 
 ```bash
 dotnet test ThalesService.IntegrationTests/ThalesService.IntegrationTests.csproj -c Debug
 ```
 
-- Запустить все тесты решения:
+- Run all tests in the solution:
 
 ```bash
 dotnet test ThalesEmu.sln -c Debug
 ```
 
-**Полезные ссылки по коду**
-- Парсер сообщений: `ThalesCore/Message/XML/MessageParser.cs` — здесь реализованы проверки длины и логика разбора полей.
-- Сервисный TCP-слушатель: `ThalesService/ThalesTcpService.cs` — обработка подключений и делегирование команд.
-- Примеры команд: `ThalesCore/HostCommands/BuildIn` — несколько встроенных команд (например, `EchoTest_B2`).
+## Where to look in the code
 
-**Отладка и советы**
-- Если тесты не видны в Visual Studio Test Explorer, убедитесь, что:
-	- в `Directory.Packages.props` указана совместимая версия `NUnit3TestAdapter` и `Microsoft.NET.Test.Sdk`;
-	- проекты таргетят `net8.0` (или совместимую TFM) и совпадают с настройками Visual Studio.
-- Для локальной отладки интеграционных тестов полезно запускать сервис вручную в консоли (см. выше) и отправлять запросы из `ThalesClients/ConsoleClient`.
-- В репозитории остались предупреждения компиляции о устаревших API и неиспользуемых переменных — их можно постепенно устранять; они не влияют на корректность интеграционных тестов.
+- Message parser: `ThalesCore/Message/XML/MessageParser.cs` — length checks and parsing logic are implemented here.
+- Service TCP listener: `ThalesService/ThalesTcpService.cs` — connection handling and command dispatching.
+- Built-in commands: `ThalesCore/HostCommands/BuildIn` — examples such as `EchoTest_B2`.
 
-**Дальнейшие шаги (рекомендации)**
-- Добавить README внутри каждого важного проекта (например, `ThalesService/README.md`) с локальными примерами запуска и специфичными параметрами.
-- Настроить CI (GitHub Actions) для прогонки `dotnet build` и `dotnet test` на Windows runner, чтобы отловить платформо-зависимые проблемы.
-- Расширить `ThalesClients/UIClient` реальными полями команд с соответствующими метками и валидацией.
+## Debugging tips
 
-Если хотите, я могу:
-- добавить отдельные READMEs по проектам, или
-- настроить простой GitHub Actions workflow для сборки и тестирования на Windows.
+- If tests are not visible in Visual Studio Test Explorer, ensure that compatible versions of `NUnit3TestAdapter` and `Microsoft.NET.Test.Sdk` are specified in `Directory.Packages.props`, and that projects target `net8.0` (or a compatible TFM).
+- For local debugging of integration tests, start the service manually (see Running hosts) and use the `ThalesClients/ConsoleClient` to send test requests.
+- The repository contains compiler warnings about deprecated APIs and unused variables; these can be cleaned up over time and do not block integration tests.
+
+## Recommended next steps
+
+- Add per-project README files (for example `ThalesService/README.md`) with project-specific run examples and settings.
+- Configure CI (GitHub Actions) to run `dotnet build` and `dotnet test` on a Windows runner to catch platform-specific issues.
+- Extend `ThalesClients/UIClient` with real command parameter forms and validation.
+
+If you want, I can:
+- add separate README files per project, or
+- create a GitHub Actions workflow that builds and runs tests on Windows.
 
 ---
-Автор: автоматизированный помощник — изменения и инструкции подготовлены в рамках текущего репозитория.
+Author: automated assistant — repository edits and instructions were prepared as part of the current session.

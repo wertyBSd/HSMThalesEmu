@@ -4,6 +4,10 @@ using ThalesCore;
 using ThalesCore.Message.XML;
 using ThalesCore.HostCommands;
 using ThalesCore.Message;
+using ThalesCore.Storage;
+using System.Text;
+using System.Security.Cryptography;
+using ThalesCore.PIN;
 
 namespace ThalesCore.HostCommands.BuildIn
 {
@@ -51,6 +55,39 @@ namespace ThalesCore.HostCommands.BuildIn
 
                 mr.AddElement(ErrorCodes.ER_00_NO_ERROR);
                 mr.AddElement(cryptUnderLMK);
+
+                // Best-effort: persist PVV + IBM3624 offset for this account using the source ZPK
+                try
+                {
+                    var store = StoreFactory.CreateFromEnvironment();
+                    store.InitializeAsync().GetAwaiter().GetResult();
+
+                    var pvv = PVV.ComputeVisaPVV(zpk, account);
+                    var offset = PVV.ComputeIBM3624Offset(zpk, account, clearPIN);
+                    var storeType = Environment.GetEnvironmentVariable("THALES_STORE")?.ToLowerInvariant() ?? "json";
+                    string encPvvB64;
+                    string encOffsetB64;
+                    if (storeType == "json")
+                    {
+                        encPvvB64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(pvv));
+                        encOffsetB64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(offset));
+                    }
+                    else
+                    {
+                        var protectedPvv = ProtectedData.Protect(Encoding.UTF8.GetBytes(pvv), null, DataProtectionScope.CurrentUser);
+                        encPvvB64 = Convert.ToBase64String(protectedPvv);
+                        var protectedOffset = ProtectedData.Protect(Encoding.UTF8.GetBytes(offset), null, DataProtectionScope.CurrentUser);
+                        encOffsetB64 = Convert.ToBase64String(protectedOffset);
+                    }
+
+                    var accRec = new AccountRecord(account, account, encPvvB64, encOffsetB64, 0, 0);
+                    store.CreateOrUpdateAccountAsync(accRec).GetAwaiter().GetResult();
+                }
+                catch (Exception ex)
+                {
+                    Log.Logger.MinorInfo("TranslatePIN JE: failed to persist PVV/offset to store: " + ex.Message);
+                }
+
                 return mr;
             }
             catch (ThalesCore.Exceptions.XUnsupportedPINBlockFormat)

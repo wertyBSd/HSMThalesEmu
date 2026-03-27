@@ -12,8 +12,8 @@
 
   <Field>
     <Name>PIN</Name>
-    <Length>CLEAR_PIN_LENGTH</Length>
-    <Type>Numeric</Type>
+    <Length>0</Length>
+    <Type>Hexadecimal</Type>
   </Field>
 
 </CommandConfiguration>

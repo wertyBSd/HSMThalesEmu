@@ -4,6 +4,9 @@ using ThalesCore.Cryptography;
 using ThalesCore.Message.XML;
 using ThalesCore.HostCommands;
 using ThalesCore.Message;
+using ThalesCore.Storage;
+using System.Text;
+using System.Security.Cryptography;
 
 namespace ThalesCore.HostCommands.BuildIn
 {
@@ -72,7 +75,7 @@ namespace ThalesCore.HostCommands.BuildIn
             }
 
             // decrypt the supplied key using clear ZMK
-            string clearKey = TripleDES.TripleDESDecrypt(new HexKey(clearZMK), new HexKey(_key).ToString());
+            string clearKey = ThalesCore.Cryptography.TripleDES.TripleDESDecrypt(new HexKey(clearZMK), new HexKey(_key).ToString());
 
             // target LMK key scheme
             KeySchemeTable.KeyScheme targetKS = KeySchemeTable.KeyScheme.Unspecified;
@@ -81,7 +84,7 @@ namespace ThalesCore.HostCommands.BuildIn
             // encrypt under LMK
             string cryptUnderLMK = Utility.EncryptUnderLMK(clearKey, targetKS, LMKKeyPair, var);
 
-            string chkVal = TripleDES.TripleDESEncrypt(new HexKey(clearKey), Constants.ZEROES);
+            string chkVal = ThalesCore.Cryptography.TripleDES.TripleDESEncrypt(new HexKey(clearKey), Constants.ZEROES);
 
             Log.Logger.MinorInfo("Imported key (clear): " + clearKey);
             Log.Logger.MinorInfo("Imported key (LMK): " + cryptUnderLMK);
@@ -90,6 +93,23 @@ namespace ThalesCore.HostCommands.BuildIn
             mr.AddElement(ErrorCodes.ER_00_NO_ERROR);
             mr.AddElement(cryptUnderLMK);
             mr.AddElement(chkVal.Substring(0, 6));
+
+            // persist imported key into configured store (best-effort)
+            try
+            {
+                var store = StoreFactory.CreateFromEnvironment();
+                store.InitializeAsync().GetAwaiter().GetResult();
+
+                var protectedBytes = ProtectedData.Protect(Encoding.UTF8.GetBytes(clearKey), null, DataProtectionScope.CurrentUser);
+                var encBase64 = Convert.ToBase64String(protectedBytes);
+                var id = "IMPORTED_" + chkVal.Substring(0, 6);
+                var keyRecord = new KeyRecord(id, _keyType, encBase64, chkVal.Substring(0, 6));
+                store.ImportKeyAsync(keyRecord).GetAwaiter().GetResult();
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.MinorInfo("ImportKey: failed to persist key to store: " + ex.Message);
+            }
 
             return mr;
         }

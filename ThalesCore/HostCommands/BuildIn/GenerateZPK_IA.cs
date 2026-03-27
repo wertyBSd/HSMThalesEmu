@@ -64,7 +64,29 @@ namespace ThalesCore.HostCommands.BuildIn
             }
 
             string clearSource;
-            HexKey cryptSource = new HexKey(_sourceZmk);
+
+            if (string.IsNullOrEmpty(_sourceZmk))
+            {
+                mr.AddElement(ErrorCodes.ER_80_DATA_LENGTH_ERROR);
+                return mr;
+            }
+
+            HexKey cryptSource = null;
+            try
+            {
+                cryptSource = new HexKey(_sourceZmk.Trim());
+            }
+            catch (ThalesCore.Exceptions.XInvalidKeyScheme)
+            {
+                mr.AddElement(ErrorCodes.ER_26_INVALID_KEY_SCHEME);
+                return mr;
+            }
+            catch (ThalesCore.Exceptions.XInvalidKey)
+            {
+                mr.AddElement(ErrorCodes.ER_15_INVALID_INPUT_DATA);
+                return mr;
+            }
+
             clearSource = Utility.DecryptUnderLMK(cryptSource.ToString(), cryptSource.Scheme, LMKPairs.LMKPair.Pair04_05, "0");
 
             if (!Utility.IsParityOK(clearSource, Utility.ParityCheck.OddParity))

@@ -43,6 +43,19 @@ namespace ThalesService
             try { thales.StartUpWithoutTCP(paramFile); }
             catch { _logger.LogWarning("Could not load Thales parameters from {file}", paramFile); }
 
+            // initialize storage and seed test data if missing
+            try
+            {
+                var store = ThalesCore.Storage.StoreFactory.CreateFromEnvironment();
+                await ThalesCore.Storage.Migrations.EnsureInitializedAsync(store);
+                await ThalesCore.Storage.SeedData.EnsureSeedAsync(store);
+                _logger.LogInformation("Key store initialized and seed data ensured.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to initialize or seed key store");
+            }
+
             _listener = new TcpListener(IPAddress.Loopback, _port);
             _listener.Start();
 
@@ -76,26 +89,50 @@ namespace ThalesService
             var buffer = new byte[8192];
             try
             {
-                int read = await stream.ReadAsync(buffer, ct);
+                // Read incoming request fully. Some clients send large payloads;
+                // loop until no more data is available for a short grace period.
+                using var ms = new MemoryStream();
+                var read = 0;
+                // initial read (respect cancellation)
+                read = await stream.ReadAsync(buffer, ct);
                 if (read <= 0) return;
-                var reqBytes = new byte[read];
-                Array.Copy(buffer, reqBytes, read);
+                ms.Write(buffer, 0, read);
+
+                // attempt to drain remaining available data with short timeouts
+                try
+                {
+                    while (stream.DataAvailable)
+                    {
+                        read = await stream.ReadAsync(buffer, ct);
+                        if (read <= 0) break;
+                        ms.Write(buffer, 0, read);
+                    }
+                }
+                catch (OperationCanceledException) { }
+
+                var reqBytes = ms.ToArray();
 
                 var msg = new ThalesCore.Message.Message(reqBytes);
                 _logger.LogInformation("Received: {req}", msg.MessageData);
 
                 int headerLen = 4;
-                try { headerLen = (int)Resources.GetResource(Resources.HEADER_LENGTH); } catch { headerLen = 4; }
+                try { headerLen = Convert.ToInt32(Resources.GetResource(Resources.HEADER_LENGTH)); } catch { headerLen = 4; }
+
+                // If headerLen looks invalid for this message, treat message as having no header
+                if (headerLen < 0 || headerLen > msg.MessageData.Length - 2)
+                    headerLen = 0;
 
                 string commandCode;
-                try
+                if (msg.MessageData.Length >= headerLen + 2)
                 {
-                    string messageHeader = msg.GetSubstring(headerLen);
-                    msg.AdvanceIndex(headerLen);
+                    if (headerLen > 0)
+                    {
+                        msg.AdvanceIndex(headerLen);
+                    }
                     commandCode = msg.GetSubstring(2);
                     msg.AdvanceIndex(2);
                 }
-                catch
+                else
                 {
                     commandCode = msg.MessageData.Length >= 2 ? msg.MessageData.Substring(0, 2) : "";
                 }
@@ -113,7 +150,17 @@ namespace ThalesService
                 hostCmd.AcceptMessage(msg);
                 var response = hostCmd.ConstructResponse();
                 var outBytes = Encoding.ASCII.GetBytes(response.MessageData);
-                await stream.WriteAsync(outBytes, ct);
+                try
+                {
+                    _logger.LogInformation("Writing {len} bytes back to client", outBytes.Length);
+                    await stream.WriteAsync(outBytes, ct);
+                    _logger.LogInformation("Write complete, wrote {len} bytes", outBytes.Length);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error writing response to client");
+                    throw;
+                }
                 hostCmd.Terminate();
             }
             catch (Exception ex)

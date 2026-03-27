@@ -88,7 +88,7 @@ namespace HostCommands
                 KS = KeySchemeTable.GetKeySchemeFromValue(ksc);
                 return true;
             }
-            catch (ThalesCore.Exceptions.XInvalidKeyType ex)
+            catch (Exception ex)
             {
                 MR.AddElement(ErrorCodes.ER_26_INVALID_KEY_SCHEME);
                 return false;
@@ -202,16 +202,19 @@ namespace HostCommands
                     if (Char.IsDigit(stage2[i]))
                     {
                         PVV += stage2.Substring(i, 1);
-                        i += 1;
                     }
+                    i += 1;
                 }
                 if (PVV.Length < 4)
                 {
                     for (int j = 0; j < stage2.Length; j++)
                     {
                         string newChar = " ";
-                        if (Char.IsDigit(stage2[j]) == false)
-                            newChar = (Convert.ToInt32(stage2.Substring(j, 1), 16) - 10).ToString("X");
+                        if (!Char.IsDigit(stage2[j]))
+                        {
+                            int val = Convert.ToInt32(stage2.Substring(j, 1), 16);
+                            newChar = (val - 10).ToString("X");
+                        }
 
                         stage2 = stage2.Remove(j, 1);
                         stage2 = stage2.Insert(j, newChar);

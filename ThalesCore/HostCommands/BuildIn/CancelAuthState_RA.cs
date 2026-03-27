@@ -14,7 +14,7 @@ namespace ThalesCore.HostCommands.BuildIn
         public override MessageResponse ConstructResponse()
         {
             MessageResponse mr = new MessageResponse();
-            if (!IsInAuthorizedState())
+            if (IsInAuthorizedState())
                 Log.Logger.MajorInfo("Exiting from AUTHORIZED state");
             else
                 Log.Logger.MajorInfo("Already out of the AUTHORIZED state");

@@ -8,67 +8,154 @@ using System.Windows.Forms;
 
 public class MainForm : Form
 {
-    TextBox txtHost = new TextBox { Text = "127.0.0.1", Width = 120 };
-    NumericUpDown numPort = new NumericUpDown { Minimum = 1, Maximum = 65535, Value = 1500 };
-    ComboBox cmbAction = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 200 };
-    Button btnSend = new Button { Text = "Send", Width = 80 };
-    TextBox txtResponse = new TextBox { Multiline = true, ReadOnly = true, Height = 200, Width = 380, ScrollBars = ScrollBars.Vertical };
-    CheckBox chkFlag = new CheckBox { Text = "Include extra flag" };
+    private readonly TextBox txtHost = new TextBox { Text = "127.0.0.1" };
+    private readonly NumericUpDown numPort = new NumericUpDown { Minimum = 1, Maximum = 65535, Value = 1500 };
+    private readonly ComboBox cmbAction = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList };
+    private readonly Button btnSend = new Button { Text = "Send" };
+    private readonly TextBox txtResponse = new TextBox { Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical, Dock = DockStyle.Fill };
+    private readonly CheckBox chkFlag = new CheckBox { Text = "Include extra flag" };
 
-    Dictionary<string, string> actions = new Dictionary<string, string>
+    // Simplified action set: display-friendly names mapped to internal short codes
+    // Map UI action names to real Thales request codes (from XML defs)
+    private readonly Dictionary<string, string> actions = new Dictionary<string, string>
     {
-        { "Echo sample", "00" },
-        { "Echo with data", "B2" },
-        { "Unknown command (test)", "ZZ" }
+        { "Echo", "B2" },                 // EchoTest_B2
+        { "Import Master Key", "A6" },    // ImportKey_A6
+        { "Export Master Key (masked)", "A8" }, // ExportKey_A8
+        { "Translate PIN (TPK->LMK)", "JC" }, // TranslatePINFromTPKToLMK_JC
+        { "Verify PIN (IBM)", "DA" }      // VerifyTerminalPINwithIBMAlgorithm_DA
     };
+
+    // Dynamic inputs for selected action
+    private readonly Panel actionDetails = new Panel { AutoSize = true, Dock = DockStyle.Fill };
+    private readonly TextBox txtParam1 = new TextBox();
+    private readonly TextBox txtParam2 = new TextBox();
 
     public MainForm()
     {
         Text = "Thales UI Client";
-        ClientSize = new Size(420, 360);
+        MinimumSize = new Size(460, 420);
 
-        Controls.Add(new Label { Text = "Host:", Location = new Point(10, 14) });
-        txtHost.Location = new Point(60, 10);
-        Controls.Add(txtHost);
+        // Main layout
+        var main = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(10), ColumnCount = 1, RowCount = 5 };
+        main.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // connection row
+        main.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // action row
+        main.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // action details row
+        main.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // button row
+        main.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // response
 
-        Controls.Add(new Label { Text = "Port:", Location = new Point(200, 14) });
-        numPort.Location = new Point(240, 10);
-        Controls.Add(numPort);
+        // Connection row (host + port)
+        var connPanel = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, FlowDirection = FlowDirection.LeftToRight };
+        connPanel.Controls.Add(new Label { Text = "Host:", AutoSize = true, TextAlign = ContentAlignment.MiddleLeft });
+        txtHost.Width = 140;
+        connPanel.Controls.Add(txtHost);
+        connPanel.Controls.Add(new Label { Text = "Port:", AutoSize = true, Margin = new Padding(12, 6, 3, 3) });
+        numPort.Width = 90;
+        connPanel.Controls.Add(numPort);
 
-        Controls.Add(new Label { Text = "Action:", Location = new Point(10, 50) });
-        cmbAction.Location = new Point(60, 46);
+        // Action row
+        var actionPanel = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, FlowDirection = FlowDirection.LeftToRight };
+        actionPanel.Controls.Add(new Label { Text = "Action:", AutoSize = true, TextAlign = ContentAlignment.MiddleLeft });
+        cmbAction.Width = 260;
         foreach (var k in actions.Keys) cmbAction.Items.Add(k);
-        cmbAction.SelectedIndex = 0;
-        Controls.Add(cmbAction);
+        if (cmbAction.Items.Count > 0) cmbAction.SelectedIndex = 0;
+        UpdateActionDetails();
+        actionPanel.Controls.Add(cmbAction);
+        actionPanel.Controls.Add(chkFlag);
+        cmbAction.SelectedIndexChanged += (s, e) => UpdateActionDetails();
 
-        chkFlag.Location = new Point(60, 80);
-        Controls.Add(chkFlag);
+        // Action details row (dynamic inputs)
+        actionDetails.Padding = new Padding(0, 6, 0, 6);
 
-        btnSend.Location = new Point(60, 110);
+        // Button row
+        var btnPanel = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, FlowDirection = FlowDirection.LeftToRight };
+        btnSend.Width = 100;
+        btnSend.Height = 30;
         btnSend.Click += async (s, e) => await SendActionAsync();
-        Controls.Add(btnSend);
+        btnPanel.Controls.Add(btnSend);
 
-        txtResponse.Location = new Point(10, 150);
-        Controls.Add(txtResponse);
+        // Response (fills remaining space)
+        var respPanel = new Panel { Dock = DockStyle.Fill };
+        txtResponse.Location = new Point(0, 0);
+        txtResponse.Margin = new Padding(0);
+        respPanel.Controls.Add(txtResponse);
+
+        main.Controls.Add(connPanel, 0, 0);
+        main.Controls.Add(actionPanel, 0, 1);
+        main.Controls.Add(actionDetails, 0, 2);
+        main.Controls.Add(btnPanel, 0, 3);
+        main.Controls.Add(respPanel, 0, 4);
+
+        Controls.Add(main);
     }
 
-    async Task SendActionAsync()
+    private void UpdateActionDetails()
+    {
+        actionDetails.Controls.Clear();
+        string actionKey = cmbAction.SelectedItem as string ?? string.Empty;
+        var fl = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, FlowDirection = FlowDirection.LeftToRight };
+
+        void AddField(string label, TextBox tb, int width = 240)
+        {
+            var lbl = new Label { Text = label, AutoSize = true, TextAlign = ContentAlignment.MiddleLeft, Margin = new Padding(0, 6, 6, 0) };
+            tb.Width = width;
+            fl.Controls.Add(lbl);
+            fl.Controls.Add(tb);
+        }
+
+        switch (actionKey)
+        {
+            case "Echo":
+                txtParam1.Text = "Hello";
+                AddField("Message:", txtParam1);
+                break;
+            case "Import Master Key":
+                txtParam1.Text = "LMK01"; // label
+                txtParam2.Text = "0123456789ABCDEF"; // key hex
+                AddField("Key label:", txtParam1);
+                AddField("Key (hex):", txtParam2);
+                break;
+            case "Export Master Key (masked)":
+                txtParam1.Text = "LMK01";
+                AddField("Key label:", txtParam1);
+                break;
+            case "Translate PIN":
+                txtParam1.Text = "1234"; // PIN
+                txtParam2.Text = "4000000000000002"; // PAN
+                AddField("PIN:", txtParam1);
+                AddField("Account (PAN):", txtParam2);
+                break;
+            case "Verify PIN":
+                txtParam1.Text = "1234";
+                txtParam2.Text = "4000000000000002";
+                AddField("PIN:", txtParam1);
+                AddField("Account (PAN):", txtParam2);
+                break;
+            default:
+                break;
+        }
+
+        actionDetails.Controls.Add(fl);
+    }
+
+    // Payload construction moved to PayloadBuilder.cs
+
+    private async Task SendActionAsync()
     {
         btnSend.Enabled = false;
         txtResponse.Clear();
         string host = txtHost.Text.Trim();
         int port = (int)numPort.Value;
-        string actionKey = (string)cmbAction.SelectedItem;
-        if (actionKey == null) { btnSend.Enabled = true; return; }
-        string code = actions[actionKey];
-        string payload = code;
-        if (chkFlag.Checked) payload += "F"; 
+        string actionKey = cmbAction.SelectedItem as string;
+        if (string.IsNullOrEmpty(actionKey)) { btnSend.Enabled = true; return; }
+        string payload = PayloadBuilder.BuildPayload(actionKey, txtParam1.Text, txtParam2.Text, chkFlag.Checked);
+        if (string.IsNullOrEmpty(payload)) { txtResponse.Text = "No payload constructed for action."; btnSend.Enabled = true; return; }
 
         try
         {
             using var tcp = new TcpClient();
             await tcp.ConnectAsync(host, port);
-            var stream = tcp.GetStream();
+            using var stream = tcp.GetStream();
             var data = Encoding.ASCII.GetBytes(payload);
             await stream.WriteAsync(data, 0, data.Length);
             var buffer = new byte[4096];

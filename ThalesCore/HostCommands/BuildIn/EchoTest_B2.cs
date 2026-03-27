@@ -10,6 +10,8 @@ namespace ThalesCore.HostCommands.BuildIn
     [ThalesCommandCode("B2", "B3", "", "Echo received data back to the user")]
     public class EchoTest_B2 : AHostCommand
     {
+        
+
         public EchoTest_B2()
         {
             ReadXMLDefinitions();

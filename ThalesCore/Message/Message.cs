@@ -20,6 +20,16 @@ namespace ThalesCore.Message
             get { return _data; }
         }
 
+        public string RemainingData
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(_data)) return string.Empty;
+                if (_curIndex >= _data.Length) return string.Empty;
+                return _data.Substring(_curIndex);
+            }
+        }
+
         public int CurrentIndex
         {
             get { return _curIndex; }

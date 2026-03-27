@@ -7,7 +7,12 @@ using ThalesCore.Message;
 
 namespace ThalesCore.HostCommands.BuildIn
 {
-    [ThalesCommandCode("", "", "", "")]
+    /// <summary>
+    /// Helper class used to load the XML definition fragment for a large multi-format key.
+    /// This is not a runnable host command; it exists so the XML parser can
+    /// include the corresponding XML field definition where needed.
+    /// Do not assign a ThalesCommandCode attribute to this class.
+    /// </summary>
     public class LargeMultiFormatKey : AHostCommand
     {
         public LargeMultiFormatKey()

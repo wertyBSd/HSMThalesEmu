@@ -87,7 +87,14 @@ namespace ThalesCore.HostCommands.BuildIn
                         mr.AddElement(ErrorCodes.ER_15_INVALID_INPUT_DATA);
                         return mr;
                     }
+                    catch (Exception)
+                    {
+                        // Defensive: Map any unexpected parsing exception to invalid key scheme
+                        mr.AddElement(ErrorCodes.ER_26_INVALID_KEY_SCHEME);
+                        return mr;
+                    }
 
+                    // If we reach here then parsing succeeded unexpectedly; but treat as invalid input defensively
                     mr.AddElement(ErrorCodes.ER_15_INVALID_INPUT_DATA);
                     return mr;
                 }

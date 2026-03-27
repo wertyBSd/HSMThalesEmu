@@ -17,9 +17,43 @@ namespace ThalesCore.HostCommands.BuildIn
 
         public override void AcceptMessage(ThalesCore.Message.Message msg)
         {
+            // Basic sanity checks: reject overly-long or non-printable payloads
+            int remaining = msg.CharsLeft();
+            Log.Logger.MinorDebug($"JG AcceptMessage: chars left={remaining}");
+            if (remaining > 2048)
+            {
+                XMLParseResult = ErrorCodes.ER_01_VERIFICATION_FAILURE;
+                return;
+            }
+
+            if (msg.CurrentIndex < msg.MessageData.Length)
+            {
+                string rem = msg.MessageData.Substring(msg.CurrentIndex).TrimEnd('\r', '\n');
+                Log.Logger.MinorDebug($"JG AcceptMessage: remainder='{rem}'");
+                foreach (char c in rem)
+                {
+                    if (c < 0x20 || c > 0x7E)
+                    {
+                        Log.Logger.MinorDebug($"JG AcceptMessage: non-printable char detected (0x{((int)c):X2})");
+                        XMLParseResult = ErrorCodes.ER_01_VERIFICATION_FAILURE;
+                        return;
+                    }
+                }
+            }
+
             string ret = string.Empty;
-            ThalesCore.Message.XML.MessageParser.Parse(msg, XMLMessageFields, ref kvp, out ret);
-            XMLParseResult = ret;
+            try
+            {
+                ThalesCore.Message.XML.MessageParser.Parse(msg, XMLMessageFields, ref kvp, out ret);
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.MinorDebug($"JG AcceptMessage: exception during parse: {ex.Message}");
+                XMLParseResult = ErrorCodes.ER_01_VERIFICATION_FAILURE;
+                return;
+            }
+            XMLParseResult = string.IsNullOrEmpty(ret) ? ErrorCodes.ER_00_NO_ERROR : ret;
+            Log.Logger.MinorDebug($"JG AcceptMessage: parse result={XMLParseResult}");
         }
 
         public override MessageResponse ConstructResponse()

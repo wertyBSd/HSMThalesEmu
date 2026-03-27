@@ -9,6 +9,7 @@ using ThalesCore.Message.XML;
 
 namespace ThalesCore.HostCommands.BuildIn
 {
+	[ThalesCommandCode("NO", "NO", "", "Returns HSM status information.")]
 	public class HSMStatus_NO: AHostCommand
 	{
 		private string _modeFlag = string.Empty;

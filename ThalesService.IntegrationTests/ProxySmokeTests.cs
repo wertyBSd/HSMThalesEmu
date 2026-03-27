@@ -89,5 +89,15 @@ namespace ThalesService.IntegrationTests
             var second = await SendProxyCommandAsync(command);
             Assert.That(second.StartsWith("GC00"), "Second proxied request failed");
         }
+
+        [Test]
+        public async Task Hsm_Status_Test()
+        {
+            // NO command expects a 2-char Mode Flag; unit tests use "00"
+            var cmd = "NO00";
+            var resp = await SendProxyCommandAsync(cmd);
+            Console.WriteLine($"HSMStatus response: '{resp}'");
+            Assert.That(resp.StartsWith("NO00"), "HSM status command should return NO00 prefix on success");
+        }
     }
 }

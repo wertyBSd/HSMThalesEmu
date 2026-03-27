@@ -150,11 +150,36 @@ namespace ThalesService
                 hostCmd.AcceptMessage(msg);
                 var response = hostCmd.ConstructResponse();
                 var outBytes = Encoding.ASCII.GetBytes(response.MessageData);
+                // Ensure responses are newline-terminated for proxies/clients that expect line endings
+                var crlf = Encoding.ASCII.GetBytes("\r\n");
+                if (outBytes.Length < 2 || outBytes[^2] != (byte)'\r' || outBytes[^1] != (byte)'\n')
+                {
+                    var tmp = new byte[outBytes.Length + crlf.Length];
+                    Buffer.BlockCopy(outBytes, 0, tmp, 0, outBytes.Length);
+                    Buffer.BlockCopy(crlf, 0, tmp, outBytes.Length, crlf.Length);
+                    outBytes = tmp;
+                }
+                // honor configured HSM response delay (millisecond granularity)
+                try
+                {
+                    var delay = ThalesCore.HSMSettings.ResponseDelayMs;
+                    // Do not apply the configured delay to the LG command itself; it should affect subsequent responses.
+                    if (delay > 0 && !string.Equals(commandCode, "LG", StringComparison.OrdinalIgnoreCase))
+                    {
+                        _logger.LogInformation("Applying configured HSM delay: {ms}ms", delay);
+                        await Task.Delay(delay, ct);
+                    }
+                }
+                catch (OperationCanceledException) { }
                 try
                 {
                     _logger.LogInformation("Writing {len} bytes back to client", outBytes.Length);
-                    await stream.WriteAsync(outBytes, ct);
+                    await stream.WriteAsync(outBytes, 0, outBytes.Length, ct);
+                    // flush to ensure bytes are pushed out the socket
+                    try { await stream.FlushAsync(ct); } catch { }
                     _logger.LogInformation("Write complete, wrote {len} bytes", outBytes.Length);
+                    // give a small grace period to allow the remote reader to observe the data
+                    try { await Task.Delay(500, CancellationToken.None); } catch { }
                 }
                 catch (Exception ex)
                 {
@@ -169,6 +194,13 @@ namespace ThalesService
             }
             finally
             {
+                try
+                {
+                    // request a graceful close to ensure buffered bytes are sent
+                    client.Client.LingerState = new System.Net.Sockets.LingerOption(true, 2);
+                }
+                catch { }
+                try { client.Client.Shutdown(SocketShutdown.Send); } catch { }
                 client.Close();
             }
         }

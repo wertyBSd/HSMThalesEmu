@@ -24,6 +24,15 @@ namespace ThalesCore.HostCommands.BuildIn
 			if (ret == ErrorCodes.ER_00_NO_ERROR)
 			{
 				_delay = kvp.Item("Delay");
+				// parse and store globally so services can honor the configured delay
+				if (int.TryParse(_delay, out var ms) && ms >= 0)
+				{
+					ThalesCore.HSMSettings.ResponseDelayMs = ms;
+				}
+				else
+				{
+					ret = ErrorCodes.ER_15_INVALID_INPUT_DATA;
+				}
 			}
 		}
 

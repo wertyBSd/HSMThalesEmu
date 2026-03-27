@@ -17,9 +17,43 @@ namespace ThalesCore.HostCommands.BuildIn
 
         public override void AcceptMessage(ThalesCore.Message.Message msg)
         {
-            string ret = string.Empty;
-            ThalesCore.Message.XML.MessageParser.Parse(msg, XMLMessageFields, ref kvp, out ret);
-            XMLParseResult = ret;
+            if (msg == null)
+            {
+                XMLParseResult = ErrorCodes.ER_01_VERIFICATION_FAILURE;
+                return;
+            }
+
+            if (msg.RemainingData == null)
+            {
+                XMLParseResult = ErrorCodes.ER_01_VERIFICATION_FAILURE;
+                return;
+            }
+
+            if (msg.RemainingData.Length > 2048)
+            {
+                XMLParseResult = ErrorCodes.ER_01_VERIFICATION_FAILURE;
+                return;
+            }
+
+            foreach (char c in msg.RemainingData)
+            {
+                if (c < 0x20 || c > 0x7E)
+                {
+                    XMLParseResult = ErrorCodes.ER_01_VERIFICATION_FAILURE;
+                    return;
+                }
+            }
+
+            try
+            {
+                string ret = string.Empty;
+                ThalesCore.Message.XML.MessageParser.Parse(msg, XMLMessageFields, ref kvp, out ret);
+                XMLParseResult = ret;
+            }
+            catch (Exception)
+            {
+                XMLParseResult = ErrorCodes.ER_01_VERIFICATION_FAILURE;
+            }
         }
 
         public override MessageResponse ConstructResponse()

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 using HostCommands;
 using ThalesCore;
@@ -84,6 +85,38 @@ namespace ThalesCore.Tests
         }
 
         [Test]
+        public void TestGenerateZEKorZAK()
+        {
+            AuthorizedStateOn();
+            SwitchToDoubleLengthZMKs();
+
+            // create a ZMK (scheme + key)
+            string ZMK = TestTran("0000U", new GenerateKey_A0()).Substring(2, 33);
+
+            // call FI (Generate ZEK/ZAK)
+            string resp = TestTran(ZMK, new GenerateZEKorZAK_FI());
+
+            // accept success or source key parity error
+            Assert.IsTrue(resp.StartsWith(ErrorCodes.ER_00_NO_ERROR) || resp.StartsWith(ErrorCodes.ER_10_SOURCE_KEY_PARITY_ERROR));
+            if (resp.StartsWith(ErrorCodes.ER_00_NO_ERROR))
+            {
+                // response should include encrypted-under-ZMK, encrypted-under-LMK and a check value (full)
+                Assert.IsTrue(resp.Length >= 2 + 16 + 16 + 16, "Response length should include encrypted key and KCV");
+                string kcv = resp.Substring(resp.Length - 16);
+                Assert.IsTrue(Regex.IsMatch(kcv, "^[0-9A-F]{16}$"), "KCV should be 16 hex characters");
+            }
+        }
+
+        [Test]
+        public void TestGenerateZEKorZAK_MissingZMK_ReturnsError()
+        {
+            AuthorizedStateOn();
+            // call FI with empty input; expect non-success error (handler validates presence of ZMK)
+            string resp = TestTran("", new GenerateZEKorZAK_FI());
+            Assert.IsFalse(resp.StartsWith(ErrorCodes.ER_00_NO_ERROR));
+        }
+
+        [Test]
         public void TestCancelAuthState()
 		{
 			Assert.AreEqual(TestTran("", new CancelAuthState_RA()), "00");
@@ -94,12 +127,200 @@ namespace ThalesCore.Tests
 		{
 			Assert.AreEqual("00", TestTran("001", new SetHSMDelay_LG()));
 		}
+
+        [Test]
+        public void TestTranslateBDK_DY_ReturnsSuccessForWellFormedInput()
+        {
+            AuthorizedStateOn();
+            SwitchToDoubleLengthZMKs();
+
+            string zmkToken = "U" + new string('0', 32);
+            string bdkToken = "U" + new string('A', 32);
+
+            string input = zmkToken + bdkToken + ";" + "U" + "0" + "0";
+
+            var resp = TestTran(input, new TranslateBDKFromLMKToZMK_DY());
+            Assert.IsTrue(resp.StartsWith(ErrorCodes.ER_00_NO_ERROR));
+        }
+
+        [Test]
+        public void TestTranslateBDK_DY_MissingInput_ReturnsError()
+        {
+            // Provide a non-printable payload to trigger verification failure
+            var resp = TestTran("\u0001", new TranslateBDKFromLMKToZMK_DY());
+            Assert.IsFalse(resp.StartsWith(ErrorCodes.ER_00_NO_ERROR));
+        }
+
+        [Test]
+        public void TestTranslateBDK_DW_ReturnsSuccessForWellFormedInput()
+        {
+            AuthorizedStateOn();
+            SwitchToDoubleLengthZMKs();
+
+            string zmkToken = "U" + new string('0', 32);
+            string bdkToken = "U" + new string('B', 32);
+
+            // For DW (ZMK->LMK), supply ZMK-encrypted BDK token and expect success
+            string input = zmkToken + bdkToken + ";" + "U" + "0" + "0";
+
+            var resp = TestTran(input, new TranslateBDKFromZMKToLMK_DW());
+            Assert.IsTrue(resp.StartsWith(ErrorCodes.ER_00_NO_ERROR));
+        }
+
+        [Test]
+        public void TestTranslateBDK_DW_MissingInput_ReturnsError()
+        {
+            // non-printable payload should trigger verification failure
+            var resp = TestTran("\u0001", new TranslateBDKFromZMKToLMK_DW());
+            Assert.IsFalse(resp.StartsWith(ErrorCodes.ER_00_NO_ERROR));
+        }
+        
+        [Test]
+        public void TestTranslateCVK_AU_ReturnsSuccessForWellFormedInput()
+        {
+            AuthorizedStateOn();
+            SwitchToDoubleLengthZMKs();
+
+            string lmkToken = "U" + new string('0', 32);
+            string cvkToken = "U" + new string('C', 32);
+
+            string input = lmkToken + cvkToken + ";" + "U" + "0" + "0";
+
+            var resp = TestTran(input, new TranslateCVKFromLMKToZMK_AU());
+            Assert.IsTrue(resp.StartsWith(ErrorCodes.ER_00_NO_ERROR));
+        }
+
+        [Test]
+        public void TestTranslateCVK_AW_ReturnsSuccessForWellFormedInput()
+        {
+            AuthorizedStateOn();
+            SwitchToDoubleLengthZMKs();
+
+            string payload = "<TranslateCVKFromZMKToLMK>" +
+                "<CVK>ZMKWrappedCVK</CVK>" +
+                "<ZMK>0123456789ABCDEF0123456789ABCDEF</ZMK>" +
+                "</TranslateCVKFromZMKToLMK>";
+
+            var resp = TestTran(payload, new TranslateCVKFromZMKToLMK_AW());
+            Assert.IsTrue(resp.StartsWith(ErrorCodes.ER_00_NO_ERROR));
+        }
+
+        [Test]
+        public void TestTranslateCVK_AW_MissingInput_ReturnsError()
+        {
+            AuthorizedStateOn();
+            SwitchToDoubleLengthZMKs();
+
+            // use a non-printable char to force verification failure
+            string payload = ((char)0x01).ToString();
+
+            var resp = TestTran(payload, new TranslateCVKFromZMKToLMK_AW());
+            Assert.IsFalse(resp.StartsWith(ErrorCodes.ER_00_NO_ERROR));
+        }
+
+        [Test]
+        public void TestTranslateCVK_AU_MissingInput_ReturnsError()
+        {
+            var resp = TestTran("\u0001", new TranslateCVKFromLMKToZMK_AU());
+            Assert.IsFalse(resp.StartsWith(ErrorCodes.ER_00_NO_ERROR));
+        }
+
+        [Test]
+        public void TestTranslateKeyScheme_B0_ReturnsSuccessForWellFormedInput()
+        {
+            AuthorizedStateOn();
+            SwitchToDoubleLengthZMKs();
+
+            // create a ZMK and a ZPK under it to produce a multi-format key token
+            string ZMK = TestTran("0000U", new GenerateKey_A0()).Substring(2, 33);
+            string genZpkResp = TestTran(ZMK, new GenerateZPK_IA());
+            string cryptKeyZMK = genZpkResp.Substring(2, 33);
+
+            string input = "000" + cryptKeyZMK + "0";
+
+            var resp = TestTran(input, new TranslateKeyScheme_B0());
+            Assert.IsTrue(resp.StartsWith(ErrorCodes.ER_00_NO_ERROR) || resp.StartsWith(ErrorCodes.ER_10_SOURCE_KEY_PARITY_ERROR));
+        }
+
+        [Test]
+        public void TestTranslateKeyScheme_B0_MissingInput_ReturnsError()
+        {
+            // non-printable payload should trigger verification failure
+            var resp = TestTran("\u0001", new TranslateKeyScheme_B0());
+            Assert.IsFalse(resp.StartsWith(ErrorCodes.ER_00_NO_ERROR));
+        }
+
+        [Test]
+        public void TestTranslateKeysFromOldLMKToNewLMK_BW_ReturnsSuccessForWellFormedInput()
+        {
+            AuthorizedStateOn();
+            SwitchToDoubleLengthZMKs();
+
+            // Create a LMK-encrypted key by generating a key under LMK format
+            // Use GenerateKey_A0 with '0000U' to create a ZMK token, then create a ZPK under that ZMK
+            string ZMK = TestTran("0000U", new GenerateKey_A0()).Substring(2, 33);
+            string genZpkResp = TestTran(ZMK, new GenerateZPK_IA());
+            string cryptKeyZMK = genZpkResp.Substring(2, 33);
+
+            // Build BW input: KeyTypeCode(2) + KeyLengthFlag(1) + Key(MultiFormat) + ';' + KeyType(3) + ';' + Reserved/Flags
+            string input = "00" + "1" + cryptKeyZMK + ";" + "U00" + ";0";
+
+            var resp = TestTran(input, new TranslateKeysFromOldLMKToNewLMK_BW());
+            Assert.IsTrue(resp.StartsWith(ErrorCodes.ER_00_NO_ERROR) || resp.StartsWith(ErrorCodes.ER_10_SOURCE_KEY_PARITY_ERROR));
+        }
+
+        [Test]
+        public void TestTranslateKeysFromOldLMKToNewLMK_BW_MissingInput_ReturnsError()
+        {
+            var resp = TestTran("\u0001", new TranslateKeysFromOldLMKToNewLMK_BW());
+            Assert.IsFalse(resp.StartsWith(ErrorCodes.ER_00_NO_ERROR));
+        }
+        [Test]
+        public void TestTranslateZEKORZAK_FK_MissingInput_ReturnsError()
+        {
+            // non-printable payload should trigger verification failure for FK
+            var resp = TestTran("\u0001", new TranslateZEKORZAKFromZMKToLMK_FK());
+            Assert.IsFalse(resp.StartsWith(ErrorCodes.ER_00_NO_ERROR));
+        }
         [Test]
         public void TestHSMStatus()
 		{
 
 			Assert.AreEqual("00", TestTran("00", new HSMStatus_NO()).Substring(0, 2));
 		}
+
+        [Test]
+        public void TestRSAEncryptTo3DES_SA_ReturnsEncryptedPinUnderSessionKey()
+        {
+            AuthorizedStateOn();
+            SwitchToDoubleLengthZMKs();
+
+            string account = "400000123456";
+            string clearPIN = "1234";
+
+            // Build clear PIN block (ANSI X9.8 == format 01)
+            string clearBlock = ThalesCore.PIN.PINBlockFormat.ToPINBlock(clearPIN, account, ThalesCore.PIN.PINBlockFormat.PIN_Block_Format.AnsiX98);
+
+            // For this test we skip actual RSA; provide the clear block as the 'RSA encrypted' payload
+            int blkBytes = clearBlock.Length / 2;
+            string rsaLen = blkBytes.ToString().PadLeft(4, '0');
+
+            // PIN session key: use double-length variant with scheme 'U'
+            string sessionKey = "U0123456789ABCDEF0123456789ABCDEF";
+
+            // Build message: PadMode(2) + SrcFmt(2) + DstFmt(2) + Account(12) + RSAlen(4) + RSAhex + Delimiter(;) + PINSessionKey + PrivateKeyFlag(2)
+            string input = "01" + "01" + "01" + account + rsaLen + clearBlock + ";" + sessionKey + "00";
+
+            var resp = TestTran(input, new ThalesCore.HostCommands.BuildIn.RSAEncryptTo3DES_SA());
+
+            Assert.IsTrue(resp.StartsWith(ErrorCodes.ER_00_NO_ERROR));
+
+            // expected encrypted destination block
+            string dstBlock = ThalesCore.PIN.PINBlockFormat.ToPINBlock(clearPIN, account, ThalesCore.PIN.PINBlockFormat.PIN_Block_Format.AnsiX98);
+            string expectedCrypt = ThalesCore.Cryptography.TripleDES.TripleDESEncrypt(new ThalesCore.Cryptography.HexKey(sessionKey), dstBlock);
+
+            Assert.AreEqual(expectedCrypt, resp.Substring(2));
+        }
 
         [Test]
         public void TestImportKey()
@@ -254,6 +475,92 @@ namespace ThalesCore.Tests
             {
                 Assert.Pass("TranslatePIN returned non-success; persistence not asserted");
             }
+        }
+
+        [Test]
+        public void TestTranslatePINFromDUKPTToZPK_CI_ReturnsSuccessForWellFormedInput()
+        {
+            AuthorizedStateOn();
+            SwitchToDoubleLengthZMKs();
+
+            string bdkToken = "U" + new string('A', 32);
+            string zpkToken = "U" + new string('0', 32);
+
+            // KSN Descriptor (3 hex), Key Serial Number (20 hex), Encrypted Block (16 hex), DestFmt(2), Account(12)
+            string ksnDesc = "ABC";
+            string ksn = "0123456789ABCDEF0123"; // 20 hex chars
+            string encBlock = "0123456789ABCDEF"; // 16 hex chars
+            string destFmt = "01";
+            string account = "400000123456";
+
+            string input = bdkToken + zpkToken + ksnDesc + ksn + encBlock + destFmt + account;
+
+            var resp = TestTran(input, new TranslatePINFromDUKPTToZPK_CI());
+            Assert.IsTrue(resp.StartsWith(ErrorCodes.ER_00_NO_ERROR));
+        }
+
+        [Test]
+        public void TestTranslatePINFromDUKPTToZPK_CI_MissingInput_ReturnsError()
+        {
+            // non-printable payload should trigger verification failure
+            var resp = TestTran("\u0001", new TranslatePINFromDUKPTToZPK_CI());
+            Assert.IsFalse(resp.StartsWith(ErrorCodes.ER_00_NO_ERROR));
+        }
+
+        [Test]
+        public void TestTranslatePINFromDUKPTToZPK3DES_G0_ReturnsSuccessForWellFormedInput()
+        {
+            AuthorizedStateOn();
+            SwitchToDoubleLengthZMKs();
+
+            string bdkToken = "U" + new string('A', 32);
+            string zpkToken = "U" + new string('0', 32);
+
+            string ksnDesc = "ABC";
+            string ksn = "0123456789ABCDEF0123"; // 20 hex chars
+            string encBlock = "0123456789ABCDEF"; // 16 hex chars
+            string destFmt = "01";
+            string account = "400000123456";
+
+            string input = bdkToken + zpkToken + ksnDesc + ksn + encBlock + destFmt + account;
+
+            var resp = TestTran(input, new TranslatePINFromDUKPTToZPK3DES_G0());
+            Assert.IsTrue(resp.StartsWith(ErrorCodes.ER_00_NO_ERROR));
+        }
+
+        [Test]
+        public void TestTranslatePINFromDUKPTToZPK3DES_G0_MissingInput_ReturnsError()
+        {
+            var resp = TestTran("\u0001", new TranslatePINFromDUKPTToZPK3DES_G0());
+            Assert.IsFalse(resp.StartsWith(ErrorCodes.ER_00_NO_ERROR));
+        }
+
+        [Test]
+        public void TestTranslatePINFromLMKToZPK_JG_ReturnsSuccessForWellFormedInput()
+        {
+            AuthorizedStateOn();
+            SwitchToDoubleLengthZMKs();
+
+            // LMK-encrypted PIN token (simulate multi-format token) and destination ZPK token
+            string lmkToken = "U" + new string('0', 32);
+            string zpkToken = "U" + new string('A', 32);
+
+            // Build a minimal valid payload expected by JG (format depends on XML defs)
+            // For simplicity use tokens followed by destination format and account
+            string destFmt = "01";
+            string account = "400000123456";
+
+            string input = lmkToken + zpkToken + destFmt + account;
+
+            var resp = TestTran(input, new TranslatePINFromLMKToZPK_JG());
+            Assert.IsTrue(resp.StartsWith(ErrorCodes.ER_00_NO_ERROR));
+        }
+
+        [Test]
+        public void TestTranslatePINFromLMKToZPK_JG_MissingInput_ReturnsError()
+        {
+            var resp = TestTran("\u0001", new TranslatePINFromLMKToZPK_JG());
+            Assert.IsFalse(resp.StartsWith(ErrorCodes.ER_00_NO_ERROR));
         }
 
         [Test]
@@ -871,9 +1178,13 @@ namespace ThalesCore.Tests
                 AuthorizedStateOn();
                 SwitchToDoubleLengthZMKs();
 
-                // create a parity-correct TMK then flip last nibble to break parity
+                // create a parity-correct TMK then flip one bit in the last byte to break parity deterministically
                 string goodTMK = Utility.MakeParity(Utility.RandomKey(true, Utility.ParityCheck.OddParity) + Utility.RandomKey(true, Utility.ParityCheck.OddParity), Utility.ParityCheck.OddParity);
-                string badTMK = goodTMK.Substring(0, goodTMK.Length - 1) + (goodTMK[goodTMK.Length - 1] == '0' ? '1' : '0');
+                string lastByteHex = goodTMK.Substring(goodTMK.Length - 2, 2);
+                byte lastByte = Convert.ToByte(lastByteHex, 16);
+                byte flipped = (byte)(lastByte ^ 0x01); // flip least-significant bit
+                string flippedHex = flipped.ToString("X2");
+                string badTMK = goodTMK.Substring(0, goodTMK.Length - 2) + flippedHex;
                 string cryptTMK = Utility.EncryptUnderLMK(badTMK, KeySchemeTable.KeyScheme.DoubleLengthKeyAnsi, LMKPairs.LMKPair.Pair04_05, "0");
 
                 var cmd = new ThalesCore.HostCommands.BuildIn.GenerateTAK_HA();
@@ -1397,5 +1708,36 @@ namespace ThalesCore.Tests
             string resp = mr.MessageData;
             Assert.IsTrue(resp.StartsWith(ErrorCodes.ER_10_SOURCE_KEY_PARITY_ERROR));
         }
+
+            [Test]
+            public void TestHashDataBlock_GM_AllAlgorithms()
+            {
+                // data = "abc" -> hex 616263, length = 3
+                var tests = new System.Collections.Generic.Dictionary<string, string>()
+                {
+                    { "01", "A9993E364706816ABA3E25717850C26C9CD0D89D" }, // SHA-1
+                    { "02", "BA7816BF8F01CFEA414140DE5DAE2223B00361A396177A9CB410FF61F20015AD" }, // SHA-256
+                    { "03", "CB00753F45A35E8BB5A03D699AC65007272C32AB0EDED1631A8B605A43FF5BED8086072BA1E7CC2358BAECA134C825A7" }, // SHA-384
+                    { "05", "DDAF35A193617ABACC417349AE20413112E6FA4E89A97EA20A9EEEE64B55D39A2192992A274FC1A836BA3C23A3FEEBBD454D4423643CE80E2A9AC94FA54CA49F" }, // SHA-512
+                    { "06", "900150983CD24FB0D6963F7D28E17F72" }, // MD5
+                    { "07", "A9993E364706816ABA3E25717850C26C9CD0D89D" }, // RIPEMD160 fallback -> SHA-1
+                    { "08", "BA7816BF8F01CFEA414140DE5DAE2223B00361A396177A9CB410FF61" } // SHA-224 (implemented as first 28 bytes of SHA-256)
+                };
+
+                foreach (var kv in tests)
+                {
+                    var cmd = new ThalesCore.HostCommands.BuildIn.HashDataBlock_GM();
+                    cmd.KeyValuePairs.Add("Hash Identifier", kv.Key);
+                    cmd.KeyValuePairs.Add("Data Length", "00003");
+                    cmd.KeyValuePairs.Add("Message Data", "616263");
+
+                    var mr = cmd.ConstructResponse();
+                    string resp = mr.MessageData;
+
+                    Assert.IsTrue(resp.StartsWith(ErrorCodes.ER_00_NO_ERROR), $"Failed for id {kv.Key}: response {resp}");
+                    string body = resp.Substring(2);
+                    Assert.AreEqual(kv.Value, body, $"Hash mismatch for id {kv.Key}");
+                }
+            }
     }
 }

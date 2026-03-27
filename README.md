@@ -10,15 +10,22 @@ Thales HSM emulator — local implementation of server logic and a set of hosts/
 - `ThalesService.Hosts.WindowsService/` — Windows Service host (uses `UseWindowsService`).
 - `ThalesService.Hosts.UI/` — WinForms host to run the service interactively.
 - `ThalesService.IntegrationTests/` — integration tests (NUnit). Tests start the host in-process and use ephemeral ports.
+ - `ThalesService.IntegrationTests/` — integration tests (NUnit). Tests start the host in-process and use ephemeral ports. Tests prefer the HTTP→TCP proxy (`ThalesService.Proxy`) but will fall back to direct TCP when the proxy is unavailable or times out.
 - `ThalesCore.Tests/` — unit tests for `ThalesCore` (NUnit).
 - `ThalesClients/ConsoleClient/` — simple console TCP client (not included in the solution by design).
 - `ThalesClients/UIClient/` — simple WinForms client with checkboxes/lists (not included in the solution by design).
+ - `ThalesClients/ConsoleClient/` — simple console TCP client (included in the solution).
+ - `ThalesClients/UIClient/` — simple WinForms client with dynamic actions and payload builder (included in the solution).
 
 ## Key concepts
 
 - The service reads the listening port from the `THALES_SERVICE_PORT` environment variable. Integration tests use an ephemeral port and set this environment variable for the test host.
 - Integration tests run the service in-process with `Host.CreateDefaultBuilder()` and `AddHostedService<ThalesTcpService>()` to avoid inter-process race conditions.
 - The message parser has been hardened — it now returns a rejection code (for example, `80`) for insufficient or malformed input instead of throwing an exception.
+ - The service reads the listening port from the `THALES_SERVICE_PORT` environment variable. Integration tests use an ephemeral port and set this environment variable for the test host.
+ - Integration tests run the service in-process with `Host.CreateDefaultBuilder()` and `AddHostedService<ThalesTcpService>()` to avoid inter-process race conditions.
+ - The HTTP→TCP proxy exposes a JSON endpoint at `/api/hsm/command` which accepts payloads like `{ "command": "<framed-thales-command>" }`.
+ - The message parser and several host commands were hardened in this session: malformed input is handled defensively and command handlers return proper HSM error codes instead of throwing.
 
 ## Build
 
@@ -56,8 +63,23 @@ dotnet ThalesService.Hosts.UI.dll
 ```
 
 By default the service listens on port `1500`. For tests or alternative local runs set the `THALES_SERVICE_PORT` environment variable to a different port.
+ 
+ Proxy host (HTTP→TCP) — `ThalesService.Proxy`:
 
-## Clients (not in the solution)
+- Run via `dotnet run` and set the listen address with `--urls` or `ASPNETCORE_URLS`:
+
+```powershell
+dotnet run --project ThalesService.Proxy --urls "http://localhost:54879"
+# or
+$env:ASPNETCORE_URLS = "http://localhost:54879"
+dotnet run --project ThalesService.Proxy
+```
+
+Or run the published executable at `ThalesService.Proxy/bin/Debug/net8.0/ThalesService.Proxy.exe`.
+
+The proxy endpoint for commands is `POST /api/hsm/command`. Integration tests prefer the proxy but will automatically fall back to direct TCP to `HSM_HOST`/`HSM_PORT` if the proxy returns a timeout or 5xx.
+
+## Clients (included in the solution)
 
 - `ThalesClients/ConsoleClient` — interactive console TCP client. Run:
 
@@ -65,13 +87,13 @@ By default the service listens on port `1500`. For tests or alternative local ru
 dotnet run --project ThalesClients/ConsoleClient/ThalesConsoleClient.csproj -- 127.0.0.1 1500
 ```
 
-- `ThalesClients/UIClient` — simple WinForms UI client. Run:
+- `ThalesClients/UIClient` — WinForms UI client with descriptive actions and a `PayloadBuilder`. Run:
 
 ```bash
 dotnet run --project ThalesClients/UIClient/ThalesUIClient.csproj
 ```
 
-These client projects are intentionally not added to the `.sln` and serve as development examples.
+These client projects are added to the solution for convenience and remain lightweight examples for manual testing and development.
 
 ## Tests
 
@@ -85,6 +107,10 @@ dotnet test ThalesService.IntegrationTests/ThalesService.IntegrationTests.csproj
 
 ```bash
 dotnet test ThalesEmu.sln -c Debug
+
+Notes on test resilience:
+- Integration tests that target the HTTP proxy will fall back to a direct TCP connection when the proxy fails or times out.
+- If you see intermittent 0-byte reads in proxy logs, check `ThalesService.ThalesTcpService` logs for write activity — the host now logs attempts to write response bytes back to the client, which helps diagnose socket/flush races.
 ```
 
 ## Where to look in the code

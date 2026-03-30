@@ -1,0 +1,31 @@
+# DUKPT test vectors (dev/test use only)
+# Each vector contains: BDK, KSN, expected_IPEK, expected_BDK_variant (for verification), sample_PIN_block, expected_clear_PIN
+
+- id: DUKPT-1
+  description: Basic DUKPT vector (single-length PIN test)
+  bdk: 0123456789ABCDEFFEDCBA9876543210
+  ksn: FFFF9876543210E00000
+  expected_ipek: 6AC292FAA1315B4D858AB3A3D7D5933A
+  sample_pin_block: 041234FFFFFFFFFFFF
+  expected_clear_pin: 1234
+
+- id: DUKPT-2
+  description: DUKPT with different KSN
+  bdk: 0123456789ABCDEFFEDCBA9876543210
+  ksn: FFFF9876543210E00001
+  expected_ipek: 6AC292FAA1315B4D858AB3A3D7D5933A
+  sample_pin_block: 041234FFFFFFFFFFFF
+  expected_clear_pin: 1234
+
+- id: DUKPT-3
+  description: DUKPT edge case (KSN counter high)
+  bdk: 0123456789ABCDEFFEDCBA9876543210
+  ksn: FFFF9876543210FFFFFF
+  expected_ipek: 6AC292FAA1315B4D858AB3A3D7D5933A
+  sample_pin_block: 041234FFFFFFFFFFFF
+  expected_clear_pin: 1234
+
+# Notes:
+# - These are placeholder vectors for test scaffolding. Replace expected values with vectors
+#   validated against a known-good DUKPT implementation before using in production tests.
+# - Fields: bdk (hex), ksn (hex), expected_ipek (hex), sample_pin_block (hex), expected_clear_pin (string)

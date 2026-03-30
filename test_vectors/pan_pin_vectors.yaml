@@ -1,0 +1,28 @@
+# PAN / PIN / PVV test vectors (DEV)
+# Each entry: pan, pin, expected_pvv (if known), notes
+
+- id: pv_case_1
+  pan: "4000001234567899"
+  pin: "1234"
+  pvk_ref: "PVK_sample"
+  expected_pvv: "1234"    # placeholder — compute/replace with real PVV from HSM
+  notes: "Basic issuance vector — replace expected_pvv with HSM result after generation."
+
+- id: auth_case_correct_pin
+  pan: "4000001234567899"
+  pin_block_iso0_under_zpk: "U838652DF68A246046DAB6104583B201A" # placeholder token
+  pan_for_check: "4000001234567899"
+  expected_result: "SUCCESS"
+
+- id: auth_case_incorrect_pin
+  pan: "4000001234567899"
+  pin_block_iso0_under_zpk: "U838652DF68A246046DAB6104583B201A"
+  expected_result: "PIN_FAIL"
+
+- id: dukpt_sample
+  pan: "4000000000000002"
+  ksndata:
+    ksn: "FFFF9876543210E00000"
+    bdk_ref: "dukpt.sample_bdk"
+  pin_block_deriv: "<DERIVED_PIN_BLOCK_PLACEHOLDER>"
+  notes: "DUKPT flow: derive session key and provide derived pin-block"

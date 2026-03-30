@@ -1,0 +1,29 @@
+# Test key material (DEV / TEST ONLY)
+# Do NOT use these values in production.
+
+lmks:
+  description: "Development LMK placeholder (for local unit/integration tests)"
+  value: "0123456789ABCDEFFEDCBA9876543210"
+
+keys:
+  ZPK_issuer:
+    encrypted_under_lmk: "U838652DF68A246046DAB6104583B201A"
+    kcv: "24F11F"
+  TPK_terminal:
+    encrypted_under_lmk: "U9498104C974FA8A7D5689E524FEF700D"
+    kcv: "A1B2C3"
+  TEK_fixed:
+    encrypted_under_lmk: "U48AEF680E6AFD0B710FF69701B83C338"
+    kcv: "D4E5F6"
+  PVK_sample:
+    encrypted_under_lmk: "U7D83F28C9F04068D5DCC02C5B156C05A"
+    kcv: "523E80"
+
+# DUKPT / BDK example vectors
+dukpt:
+  sample_bdk: "0123456789ABCDEFFEDCBA9876543210"
+  sample_ksn: "FFFF9876543210E00000"
+
+# Notes:
+# - Fields prefixed with 'U' represent test tokens used in the existing test harness.
+# - Replace these placeholders with real test vectors (clear and encrypted) when available.

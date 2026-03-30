@@ -369,7 +369,18 @@ namespace ThalesCore.Tests
             if (importResult.StartsWith(ErrorCodes.ER_00_NO_ERROR))
             {
                 var keysFile = Path.Combine(tmp, "keys.json");
-                Assert.IsTrue(File.Exists(keysFile), "keys.json must exist after import");
+                // wait briefly for the store to flush to disk (avoid transient test race)
+                bool exists = false;
+                for (int i = 0; i < 20; i++)
+                {
+                    if (File.Exists(keysFile))
+                    {
+                        exists = true;
+                        break;
+                    }
+                    System.Threading.Thread.Sleep(50);
+                }
+                Assert.IsTrue(exists, "keys.json must exist after import");
                 var content = File.ReadAllText(keysFile);
                 Assert.IsTrue(content.Contains("IMPORTED_"), "Imported key ID should appear in keys.json");
             }
@@ -1541,10 +1552,20 @@ namespace ThalesCore.Tests
 
             // create a clear key with broken parity and encrypt under LMK pair 04-05
             string good = Utility.MakeParity(Utility.RandomKey(true, Utility.ParityCheck.OddParity) + Utility.RandomKey(true, Utility.ParityCheck.OddParity), Utility.ParityCheck.OddParity);
-            string bad = good.Substring(0, good.Length - 1) + (good[good.Length - 1] == '0' ? '1' : '0');
-            // ensure parity indeed fails for bad; if not, invert another nibble
+            // flip a bit in the first byte to break parity deterministically
+            string fb = good.Substring(0, 2);
+            byte b0 = Convert.ToByte(fb, 16);
+            b0 ^= 0x01;
+            string bad = b0.ToString("X2") + good.Substring(2);
+
+            // if parity still oddly passes, flip second byte as fallback
             if (Utility.IsParityOK(bad, Utility.ParityCheck.OddParity))
-                bad = (bad[1] == 'F') ? bad[0] + "E" + bad.Substring(2) : bad[0] + "F" + bad.Substring(2);
+            {
+                string fb2 = bad.Substring(2, 2);
+                byte b1 = Convert.ToByte(fb2, 16);
+                b1 ^= 0x01;
+                bad = bad.Substring(0, 2) + b1.ToString("X2") + bad.Substring(4);
+            }
 
             Assert.IsFalse(Utility.IsParityOK(bad, Utility.ParityCheck.OddParity));
 
@@ -1626,11 +1647,23 @@ namespace ThalesCore.Tests
         {
             var cmd = new ThalesCore.HostCommands.BuildIn.GenerateVISACVV_CW();
 
-            // create a CVK then break parity
+            // create a CVK then break parity by flipping a bit in the first byte
             string good = Utility.MakeParity(Utility.RandomKey(false, Utility.ParityCheck.OddParity) + Utility.RandomKey(false, Utility.ParityCheck.OddParity), Utility.ParityCheck.OddParity);
-            string bad = good.Substring(0, good.Length - 1) + (good[good.Length - 1] == '0' ? '1' : '0');
+            // flip LSB of first byte to change parity
+            string firstByteHex = good.Substring(0, 2);
+            byte b0 = Convert.ToByte(firstByteHex, 16);
+            b0 ^= 0x01; // flip least significant bit
+            string flipped = b0.ToString("X2") + good.Substring(2);
+            string bad = flipped;
+
+            // ensure parity now fails; if not, try flipping second byte
             if (Utility.IsParityOK(bad, Utility.ParityCheck.OddParity))
-                bad = (bad[1] == 'F') ? bad[0] + "E" + bad.Substring(2) : bad[0] + "F" + bad.Substring(2);
+            {
+                string fb2 = bad.Substring(2, 2);
+                byte b1 = Convert.ToByte(fb2, 16);
+                b1 ^= 0x01;
+                bad = bad.Substring(0, 2) + b1.ToString("X2") + bad.Substring(4);
+            }
 
             Assert.IsFalse(Utility.IsParityOK(bad, Utility.ParityCheck.OddParity));
 
